@@ -7,6 +7,7 @@ const User = require("../models/User");
 const WeeklyScheduleRequest = require("../models/WeeklyScheduleRequest");
 const WorkSchedule = require("../models/WorkSchedule");
 const { calculateSalary } = require("../utils/salary");
+const { autoCheckoutPastSchedules } = require("../utils/checkout");
 const { todayString } = require("../utils/date");
 
 const router = express.Router();
@@ -73,6 +74,8 @@ const saveEmployeeDaySchedule = async ({ userId, date, shiftOption, status, admi
       approvedBy: adminId,
     }))
   );
+
+  await autoCheckoutPastSchedules();
 
   return WorkSchedule.find({ user: userId, date }).populate(populateUser).sort({ shift: 1 });
 };

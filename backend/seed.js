@@ -1,5 +1,6 @@
 const Role = require("./models/Role");
 const User = require("./models/User");
+const { autoCheckoutPastSchedules } = require("./utils/checkout");
 
 const seedDefaults = async () => {
   await Role.updateOne(
@@ -29,6 +30,8 @@ const seedDefaults = async () => {
     },
     { upsert: true }
   );
+
+  await autoCheckoutPastSchedules();
 };
 
 module.exports = seedDefaults;
