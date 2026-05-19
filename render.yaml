@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: khoquanly-backend
+    env: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        value: admin@warehouse.com
+      - key: ADMIN_PASSWORD
+        value: admin123
+      - key: CLIENT_URL
+        value: https://khoquanly.vercel.app
