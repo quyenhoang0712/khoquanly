@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "../../api";
 import { Alert, EmptyRow } from "../../components/DataState";
 import Modal from "../../components/Modal";
-import { exportCsv, formatCurrency, formatDate, formatNumber } from "../../utils/workforce";
+import { exportCsv, formatCurrency, formatDate, formatNumber, salaryPeriodLabel } from "../../utils/workforce";
 
 export default function AdminSalaries() {
   const now = new Date();
@@ -26,6 +26,7 @@ export default function AdminSalaries() {
       ),
     [rows]
   );
+  const periodLabel = salaryPeriodLabel(month, year, rows[0]?.periodStart, rows[0]?.periodEnd);
 
   const load = async () => {
     try {
@@ -53,7 +54,8 @@ export default function AdminSalaries() {
   };
 
   const doExport = () => {
-    exportCsv(`bang-luong-${month}-${year}.csv`, [
+    exportCsv(`bang-luong-ky-${month}-${year}.csv`, [
+      ["Ky luong", periodLabel],
       ["Nhan vien", "Email", "Tong ca", "Tong gio", "Tong luong"],
       ...rows.map((row) => [row.user?.name, row.user?.email, row.totalShifts, row.totalHours, row.totalSalary]),
     ]);
@@ -65,6 +67,7 @@ export default function AdminSalaries() {
         <div>
           <p className="eyebrow">Payroll</p>
           <h1>Bảng lương nhân viên</h1>
+          <p className="muted">Kỳ lương 4 tuần: {periodLabel}</p>
         </div>
         <button className="button primary" type="button" onClick={doExport}>
           Xuất bảng lương
@@ -75,7 +78,7 @@ export default function AdminSalaries() {
 
       <div className="toolbar salary-toolbar">
         <label className="field inline-field">
-          <span>Tháng</span>
+          <span>Kỳ bắt đầu tháng</span>
           <select value={month} onChange={(event) => setMonth(Number(event.target.value))}>
             {Array.from({ length: 12 }, (_, index) => index + 1).map((item) => (
               <option key={item} value={item}>Tháng {item}</option>
@@ -127,6 +130,7 @@ export default function AdminSalaries() {
 
       {detail && (
         <Modal title={`Chi tiết lương - ${detail.user?.name || "Nhân viên"}`} onClose={() => setDetail(null)}>
+          <p className="muted">Kỳ lương 4 tuần: {salaryPeriodLabel(detail.month, detail.year, detail.periodStart, detail.periodEnd)}</p>
           <div className="salary-detail-summary">
             <div><span>Tổng ca</span><strong>{formatNumber(detail.totalShifts)}</strong></div>
             <div><span>Tổng giờ</span><strong>{formatNumber(detail.totalHours)}</strong></div>

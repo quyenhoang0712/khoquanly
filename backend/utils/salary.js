@@ -1,12 +1,12 @@
 const WorkSchedule = require("../models/WorkSchedule");
 const CheckoutLog = require("../models/CheckoutLog");
-const { monthRange } = require("./date");
+const { salaryPeriodRange } = require("./date");
 
 const HOURS_PER_SHIFT = 4;
 const HOURLY_RATE = 30000;
 
 const calculateSalary = async (userId, month, year) => {
-  const { start, end } = monthRange(month, year);
+  const { start, end } = salaryPeriodRange(month, year);
 
   const [schedules, checkouts] = await Promise.all([
     WorkSchedule.find({
@@ -47,7 +47,7 @@ const calculateSalary = async (userId, month, year) => {
   const totalHours = totalShifts * HOURS_PER_SHIFT;
   const totalSalary = totalHours * HOURLY_RATE;
 
-  return { totalShifts, totalHours, totalSalary, details };
+  return { periodStart: start, periodEnd: end, totalShifts, totalHours, totalSalary, details };
 };
 
 module.exports = { calculateSalary, HOURS_PER_SHIFT, HOURLY_RATE };

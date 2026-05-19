@@ -25,6 +25,28 @@ export const formatCurrency = (value) =>
 
 export const formatNumber = (value) => new Intl.NumberFormat("vi-VN").format(Number(value || 0));
 
+const toLocalDateString = (date) => {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+};
+
+export const salaryPeriodRange = (month, year) => {
+  const startDate = new Date(Number(year), Number(month) - 1, 11);
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + 27);
+
+  return {
+    start: toLocalDateString(startDate),
+    end: toLocalDateString(endDate),
+  };
+};
+
+export const salaryPeriodLabel = (month, year, periodStart, periodEnd) => {
+  const fallback = salaryPeriodRange(month, year);
+  return `${formatDate(periodStart || fallback.start)} - ${formatDate(periodEnd || fallback.end)}`;
+};
+
 export const exportCsv = (filename, rows) => {
   const csv = rows.map((row) => row.map((cell) => `"${String(cell ?? "").replaceAll('"', '""')}"`).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
