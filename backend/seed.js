@@ -13,12 +13,14 @@ const seedDefaults = async () => {
     { upsert: true }
   );
 
+  const adminEmail = process.env.ADMIN_EMAIL || "admin@warehouse.com";
+
   await User.updateOne(
-    { email: process.env.ADMIN_EMAIL || "admin@warehouse.com" },
+    { email: adminEmail },
     {
-      $setOnInsert: {
+      $set: {
         name: "Admin",
-        email: process.env.ADMIN_EMAIL || "admin@warehouse.com",
+        email: adminEmail,
         password: process.env.ADMIN_PASSWORD || "admin123",
         role: "admin",
         hourlyRate: 30000,
