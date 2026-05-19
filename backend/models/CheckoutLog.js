@@ -6,6 +6,7 @@ const checkoutLogSchema = new mongoose.Schema(
     date: { type: String, required: true },
     checkoutAt: { type: Date, default: Date.now },
     note: { type: String, default: "" },
+    images: [{ type: String }],
   },
   { timestamps: true }
 );

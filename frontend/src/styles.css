@@ -772,6 +772,20 @@ tbody tr:hover {
   object-fit: cover;
 }
 
+.checkout-images {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.checkout-images > span {
+  color: var(--slate-500);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .calendar-toolbar {
   justify-content: flex-start;
   flex-wrap: wrap;

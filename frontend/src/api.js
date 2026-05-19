@@ -145,6 +145,9 @@ export const api = {
     return parseResponse(await request(`${API_BASE_URL}/user/tasks/${id}/report`, { method: "POST", body: formData }));
   },
   async checkout(payload) {
+    if (payload instanceof FormData) {
+      return parseResponse(await request(`${API_BASE_URL}/user/checkout`, { method: "POST", body: payload }));
+    }
     return parseResponse(await request(`${API_BASE_URL}/user/checkout`, jsonOptions("POST", payload)));
   },
   async getMySalary(params) {

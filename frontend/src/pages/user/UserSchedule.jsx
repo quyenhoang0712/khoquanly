@@ -3,7 +3,7 @@ import { api } from "../../api";
 import CalendarMonth, { describeShift, groupByDate, monthKey, splitMonthKey } from "../../components/CalendarMonth";
 import { Alert, EmptyRow, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
-import { formatDate, shiftLabels, statusLabels } from "../../utils/workforce";
+import { API_ORIGIN, formatDate, shiftLabels, statusLabels } from "../../utils/workforce";
 
 export default function UserSchedule() {
   const [month, setMonth] = useState(monthKey());
@@ -72,6 +72,18 @@ export default function UserSchedule() {
             <div><span>Làm với ai</span><strong>{coworkerNames.join(", ") || "-"}</strong></div>
             <div><span>Ghi chú</span><strong>{checkout?.note || "-"}</strong></div>
           </div>
+          {checkout?.images?.length > 0 && (
+            <div className="checkout-images">
+              <span>Ảnh checkout</span>
+              <div className="image-list">
+                {checkout.images.map((image) => (
+                  <a key={image} href={`${API_ORIGIN}${image}`} target="_blank" rel="noreferrer">
+                    <img src={`${API_ORIGIN}${image}`} alt="checkout" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="table-wrap mobile-card-table">
             <table>
               <thead><tr><th>Ca làm</th><th>Thời gian</th><th>Trạng thái</th></tr></thead>

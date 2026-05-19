@@ -158,12 +158,21 @@ router.post("/tasks/:id/report", upload.array("images", 6), async (req, res, nex
   }
 });
 
-router.post("/checkout", async (req, res, next) => {
+router.post("/checkout", upload.array("images", 6), async (req, res, next) => {
   try {
     const date = req.body.date || todayString();
+    const imagePaths = (req.files || []).map((file) => `/uploads/reports/${file.filename}`);
+    const update = {
+      user: req.user.id,
+      date,
+      checkoutAt: new Date(),
+      note: req.body.note || "",
+    };
+    if (imagePaths.length) update.images = imagePaths;
+
     const checkout = await CheckoutLog.findOneAndUpdate(
       { user: req.user.id, date },
-      { user: req.user.id, date, checkoutAt: new Date(), note: req.body.note || "" },
+      update,
       { upsert: true, new: true, runValidators: true }
     );
     res.status(201).json(checkout);
