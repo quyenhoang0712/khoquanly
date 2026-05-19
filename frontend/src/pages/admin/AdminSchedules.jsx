@@ -40,6 +40,7 @@ const summarizeEmployeeSchedules = (items) => {
 
     return {
       user: group.user,
+      shiftOption: hasMorning && hasAfternoon ? "full" : hasMorning ? "morning" : hasAfternoon ? "afternoon" : "off",
       shiftLabel: hasMorning && hasAfternoon ? "Full ca" : hasMorning ? "Ca sáng" : hasAfternoon ? "Ca chiều" : "-",
       timeLabel: isLeave
         ? "-"
@@ -66,7 +67,10 @@ export default function AdminSchedules() {
   const [users, setUsers] = useState([]);
   const [rows, setRows] = useState([]);
   const [selectedDate, setSelectedDate] = useState("");
+  const [scheduleForm, setScheduleForm] = useState({ userId: "", shiftOption: "full", status: "scheduled" });
+  const [editingUserId, setEditingUserId] = useState("");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   const load = () => {
     api.getAdminSchedules({ ...splitMonthKey(month), userId, shift }).then(setRows).catch((err) => setError(err.message));
@@ -81,6 +85,70 @@ export default function AdminSchedules() {
   const dayItems = selectedDate ? itemsByDate[selectedDate] || [] : [];
   const daySummary = useMemo(() => summarizeEmployeeSchedules(dayItems), [dayItems]);
 
+  const openDate = (date) => {
+    setSelectedDate(date);
+    setEditingUserId("");
+    setScheduleForm({ userId: "", shiftOption: "full", status: "scheduled" });
+    setError("");
+    setMessage("");
+  };
+
+  const submitSchedule = async (event) => {
+    event.preventDefault();
+    try {
+      setError("");
+      setMessage("");
+      const payload = {
+        userId: scheduleForm.userId,
+        date: selectedDate,
+        shiftOption: scheduleForm.shiftOption,
+        status: scheduleForm.status,
+      };
+
+      if (editingUserId) {
+        await api.updateAdminSchedule(selectedDate, editingUserId, payload);
+        setMessage("Đã cập nhật lịch làm.");
+      } else {
+        await api.createAdminSchedule(payload);
+        setMessage("Đã thêm nhân viên vào lịch.");
+      }
+
+      setEditingUserId("");
+      setScheduleForm({ userId: "", shiftOption: "full", status: "scheduled" });
+      load();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const editSchedule = (item) => {
+    setEditingUserId(item.user?._id || "");
+    setScheduleForm({
+      userId: item.user?._id || "",
+      shiftOption: item.shiftOption,
+      status: item.status === "leave" ? "leave" : "scheduled",
+    });
+    setMessage("");
+  };
+
+  const deleteSchedule = async (item) => {
+    const targetUserId = item.user?._id;
+    if (!targetUserId) return;
+    try {
+      setError("");
+      setMessage("");
+      await api.deleteAdminSchedule(selectedDate, targetUserId);
+      setMessage("Đã xóa lịch của nhân viên trong ngày.");
+      if (editingUserId === targetUserId) {
+        setEditingUserId("");
+        setScheduleForm({ userId: "", shiftOption: "full", status: "scheduled" });
+      }
+      load();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   return (
     <section className="page">
       <div className="page-header">
@@ -90,6 +158,7 @@ export default function AdminSchedules() {
         </div>
       </div>
       <Alert message={error} />
+      <Alert message={message} type="success" />
       <div className="toolbar calendar-toolbar">
         <input type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
         <select value={userId} onChange={(event) => setUserId(event.target.value)}>
@@ -105,7 +174,7 @@ export default function AdminSchedules() {
       <CalendarMonth
         month={month}
         itemsByDate={itemsByDate}
-        onDayClick={setSelectedDate}
+        onDayClick={openDate}
         compact
         renderMeta={(date, items) => {
           if (items.length === 0) return null;
@@ -121,18 +190,72 @@ export default function AdminSchedules() {
 
       {selectedDate && (
         <Modal title={`Nhân viên làm ngày ${formatDate(selectedDate)}`} onClose={() => setSelectedDate("")}>
-          <div className="table-wrap">
+          <form className="schedule-editor-form" onSubmit={submitSchedule}>
+            <label className="field">
+              <span>Nhân viên</span>
+              <select
+                value={scheduleForm.userId}
+                onChange={(event) => setScheduleForm({ ...scheduleForm, userId: event.target.value })}
+                disabled={Boolean(editingUserId)}
+                required
+              >
+                <option value="">Chọn nhân viên</option>
+                {users.map((user) => (
+                  <option key={user._id} value={user._id}>{user.name}</option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>Ca làm</span>
+              <select value={scheduleForm.shiftOption} onChange={(event) => setScheduleForm({ ...scheduleForm, shiftOption: event.target.value })}>
+                <option value="morning">Ca sáng</option>
+                <option value="afternoon">Ca chiều</option>
+                <option value="full">Full ca</option>
+                <option value="off">Xóa lịch ngày này</option>
+              </select>
+            </label>
+            <label className="field">
+              <span>Trạng thái</span>
+              <select value={scheduleForm.status} onChange={(event) => setScheduleForm({ ...scheduleForm, status: event.target.value })}>
+                <option value="scheduled">Đi làm</option>
+                <option value="leave">Nghỉ</option>
+              </select>
+            </label>
+            <div className="schedule-editor-actions">
+              <button className="button primary" type="submit">{editingUserId ? "Lưu lịch" : "Thêm vào lịch"}</button>
+              {editingUserId && (
+                <button
+                  className="button ghost"
+                  type="button"
+                  onClick={() => {
+                    setEditingUserId("");
+                    setScheduleForm({ userId: "", shiftOption: "full", status: "scheduled" });
+                  }}
+                >
+                  Hủy sửa
+                </button>
+              )}
+            </div>
+          </form>
+
+          <div className="table-wrap mobile-card-table">
             <table>
-              <thead><tr><th>Nhân viên</th><th>Ca</th><th>Thời gian</th><th>Làm với ai</th><th>Trạng thái</th></tr></thead>
+              <thead><tr><th>Nhân viên</th><th>Ca</th><th>Thời gian</th><th>Làm với ai</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
               <tbody>
-                {daySummary.length === 0 && <EmptyRow colSpan={5}>Không có lịch trong ngày này.</EmptyRow>}
+                {daySummary.length === 0 && <EmptyRow colSpan={6}>Không có lịch trong ngày này.</EmptyRow>}
                 {daySummary.map((item) => (
                   <tr key={item.user?._id || item.user?.email || item.shiftLabel}>
-                    <td>{item.user?.name}</td>
-                    <td>{item.shiftLabel}</td>
-                    <td>{item.timeLabel}</td>
-                    <td>{item.coworkers}</td>
-                    <td><StatusBadge status={statusLabels[item.status] || item.status} /></td>
+                    <td data-label="Nhân viên">{item.user?.name}</td>
+                    <td data-label="Ca">{item.shiftLabel}</td>
+                    <td data-label="Thời gian">{item.timeLabel}</td>
+                    <td data-label="Làm với ai">{item.coworkers}</td>
+                    <td data-label="Trạng thái"><StatusBadge status={statusLabels[item.status] || item.status} /></td>
+                    <td data-label="Thao tác">
+                      <div className="row-actions">
+                        <button className="button small ghost" type="button" onClick={() => editSchedule(item)}>Sửa</button>
+                        <button className="button small danger" type="button" onClick={() => deleteSchedule(item)}>Xóa</button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

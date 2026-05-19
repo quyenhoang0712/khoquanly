@@ -34,6 +34,49 @@ const applyDateFilters = (filters, query) => {
   }
 };
 
+const shiftsFromOption = (shiftOption) => {
+  if (shiftOption === "full") return ["morning", "afternoon"];
+  if (["morning", "afternoon"].includes(shiftOption)) return [shiftOption];
+  return [];
+};
+
+const saveEmployeeDaySchedule = async ({ userId, date, shiftOption, status, adminId }) => {
+  if (!userId || !date || !shiftOption) {
+    const error = new Error("Vui lòng chọn nhân viên, ngày làm và ca làm");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const employee = await User.findOne({ _id: userId, role: "user", active: true });
+  if (!employee) {
+    const error = new Error("Không tìm thấy nhân viên");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const shifts = shiftsFromOption(shiftOption);
+  await WorkSchedule.deleteMany({ user: userId, date });
+
+  if (shiftOption === "off") return [];
+  if (shifts.length === 0) {
+    const error = new Error("Ca làm không hợp lệ");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  await WorkSchedule.insertMany(
+    shifts.map((shift) => ({
+      user: userId,
+      date,
+      shift,
+      status: status === "leave" ? "leave" : "scheduled",
+      approvedBy: adminId,
+    }))
+  );
+
+  return WorkSchedule.find({ user: userId, date }).populate(populateUser).sort({ shift: 1 });
+};
+
 router.get("/users", async (req, res, next) => {
   try {
     const users = await User.find({ active: true }).select("-password").sort({ role: 1, name: 1 });
@@ -108,6 +151,45 @@ router.get("/schedules", async (req, res, next) => {
 
     const schedules = await WorkSchedule.find(filters).populate(populateUser).sort({ date: 1, shift: 1 });
     res.json(schedules);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/schedules", async (req, res, next) => {
+  try {
+    const schedules = await saveEmployeeDaySchedule({
+      userId: req.body.userId,
+      date: req.body.date,
+      shiftOption: req.body.shiftOption,
+      status: req.body.status,
+      adminId: req.user.id,
+    });
+    res.status(201).json(schedules);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/schedules/:date/:userId", async (req, res, next) => {
+  try {
+    const schedules = await saveEmployeeDaySchedule({
+      userId: req.params.userId,
+      date: req.params.date,
+      shiftOption: req.body.shiftOption,
+      status: req.body.status,
+      adminId: req.user.id,
+    });
+    res.json(schedules);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/schedules/:date/:userId", async (req, res, next) => {
+  try {
+    const result = await WorkSchedule.deleteMany({ user: req.params.userId, date: req.params.date });
+    res.json({ deletedCount: result.deletedCount });
   } catch (error) {
     next(error);
   }

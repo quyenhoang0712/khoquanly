@@ -77,6 +77,15 @@ export const api = {
   async getAdminSchedules(params) {
     return parseResponse(await request(`${API_BASE_URL}/admin/schedules${query(params)}`));
   },
+  async createAdminSchedule(payload) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/schedules`, jsonOptions("POST", payload)));
+  },
+  async updateAdminSchedule(date, userId, payload) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/schedules/${date}/${userId}`, jsonOptions("PUT", payload)));
+  },
+  async deleteAdminSchedule(date, userId) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/schedules/${date}/${userId}`, { method: "DELETE" }));
+  },
   async getAdminScheduleRequests(params) {
     return parseResponse(await request(`${API_BASE_URL}/admin/schedule-requests${query(params)}`));
   },

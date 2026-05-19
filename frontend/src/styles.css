@@ -299,6 +299,18 @@ h2 {
   box-shadow: var(--shadow-sm);
 }
 
+.button.danger {
+  color: var(--red);
+  background: var(--red-soft);
+  border-color: #fecdd3;
+}
+
+.button.danger:hover {
+  transform: translateY(-1px);
+  border-color: #fda4af;
+  box-shadow: var(--shadow-sm);
+}
+
 .button:disabled {
   opacity: 0.72;
   cursor: not-allowed;
@@ -1218,6 +1230,33 @@ tbody tr:hover {
   font-size: 18px;
 }
 
+.schedule-editor-form {
+  padding: 14px;
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr auto;
+  gap: 10px;
+  align-items: end;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.76)),
+    rgba(255, 255, 255, 0.86);
+  box-shadow: var(--shadow-sm);
+}
+
+.schedule-editor-form .field {
+  min-width: 0;
+}
+
+.schedule-editor-form select {
+  width: 100%;
+}
+
+.schedule-editor-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .week-request-list {
   display: grid;
   gap: 10px;
@@ -1676,6 +1715,15 @@ tbody tr:hover {
   .shift-choice {
     min-height: 48px;
     border-radius: 14px;
+  }
+
+  .schedule-editor-form {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  .schedule-editor-actions {
+    flex-direction: column;
   }
 
   .mobile-card-table {
