@@ -786,6 +786,91 @@ tbody tr:hover {
   letter-spacing: 0.04em;
 }
 
+.salary-mobile-list {
+  display: none;
+}
+
+.salary-day-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--shadow-sm);
+}
+
+.salary-day-card.empty {
+  color: var(--slate-500);
+  font-weight: 800;
+  text-align: center;
+}
+
+.salary-day-head,
+.salary-day-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.salary-day-head span,
+.salary-day-total span {
+  display: block;
+  color: var(--slate-500);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.salary-day-head strong {
+  font-size: 19px;
+}
+
+.salary-shifts {
+  display: grid;
+  gap: 8px;
+}
+
+.shift-pill {
+  min-height: 40px;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  color: var(--slate-500);
+  background: rgba(15, 23, 42, 0.035);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.shift-pill.active {
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+  background: #dbeafe;
+}
+
+.shift-pill.active.afternoon {
+  color: #6d28d9;
+  border-color: #e9d5ff;
+  background: #f3e8ff;
+}
+
+.salary-day-total {
+  padding-top: 2px;
+}
+
+.salary-day-total > div {
+  min-width: 0;
+}
+
+.salary-day-total strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--slate-900);
+  font-size: 20px;
+  line-height: 1.1;
+}
+
 .calendar-toolbar {
   justify-content: flex-start;
   flex-wrap: wrap;
@@ -1790,6 +1875,33 @@ tbody tr:hover {
 
   .mobile-card-table td .button {
     width: 100%;
+  }
+
+  .user-salary-page .salary-table {
+    display: none;
+  }
+
+  .user-salary-page .salary-mobile-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .user-salary-page .stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .user-salary-page .stat-card {
+    min-height: 78px;
+    padding: 12px;
+  }
+
+  .user-salary-page .stat-card span {
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .user-salary-page .stat-card strong {
+    font-size: 18px;
   }
 
   .modal-backdrop {

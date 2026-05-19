@@ -17,7 +17,7 @@ export default function UserSalary() {
   const periodLabel = salaryPeriodLabel(month, year, salary?.periodStart, salary?.periodEnd);
 
   return (
-    <section className="page">
+    <section className="page user-salary-page">
       <div className="page-header">
         <div>
           <p className="eyebrow">Kỳ lương</p>
@@ -49,7 +49,7 @@ export default function UserSalary() {
         <article className="stat-card"><div><span>Tổng lương</span><strong>{formatCurrency(salary?.totalSalary || 0)}</strong></div></article>
       </div>
 
-      <div className="panel table-wrap mobile-card-table">
+      <div className="panel table-wrap salary-table">
         <table>
           <thead>
             <tr>
@@ -73,6 +73,36 @@ export default function UserSalary() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="salary-mobile-list">
+        {!salary?.details?.length && <div className="salary-day-card empty">Không có dữ liệu lương trong kỳ này.</div>}
+        {salary?.details?.map((item) => (
+          <article className="salary-day-card" key={item.date}>
+            <div className="salary-day-head">
+              <span>Ngày</span>
+              <strong>{formatDate(item.date)}</strong>
+            </div>
+            <div className="salary-shifts">
+              <span className={item.morning ? "shift-pill active" : "shift-pill"}>
+                Ca sáng {item.morning ? "09:00 - 13:00" : "-"}
+              </span>
+              <span className={item.afternoon ? "shift-pill active afternoon" : "shift-pill"}>
+                Ca chiều {item.afternoon ? "13:00 - 17:00" : "-"}
+              </span>
+            </div>
+            <div className="salary-day-total">
+              <div>
+                <span>Giờ</span>
+                <strong>{formatNumber(item.hours)}</strong>
+              </div>
+              <div>
+                <span>Lương</span>
+                <strong>{formatCurrency(item.salary)}</strong>
+              </div>
+            </div>
+          </article>
+        ))}
       </div>
     </section>
   );
