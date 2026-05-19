@@ -101,7 +101,7 @@ export default function AdminEmployees() {
         <input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Tìm theo tên hoặc email..." />
       </div>
 
-      <div className="panel table-wrap">
+      <div className="panel table-wrap mobile-card-table">
         <table>
           <thead>
             <tr>
@@ -116,16 +116,16 @@ export default function AdminEmployees() {
             {filteredRows.length === 0 && <EmptyRow colSpan={5}>Chưa có nhân sự.</EmptyRow>}
             {filteredRows.map((user) => (
               <tr key={user._id}>
-                <td>
+                <td data-label="Nhân viên">
                   <div className="employee-cell">
                     <span>{user.name?.slice(0, 1)?.toUpperCase() || "N"}</span>
                     <strong>{user.name}</strong>
                   </div>
                 </td>
-                <td>{user.email}</td>
-                <td>Nhân viên</td>
-                <td>{formatCurrency(user.hourlyRate)}</td>
-                <td>
+                <td data-label="Email">{user.email}</td>
+                <td data-label="Vai trò">Nhân viên</td>
+                <td data-label="Lương giờ">{formatCurrency(user.hourlyRate)}</td>
+                <td data-label="Trạng thái">
                   <StatusBadge status={user.active ? "approved" : "rejected"} />
                 </td>
               </tr>

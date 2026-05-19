@@ -75,7 +75,7 @@ export default function AdminTasks() {
         <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
       </div>
 
-      <div className="panel table-wrap">
+      <div className="panel table-wrap mobile-card-table">
         <table>
           <thead>
             <tr>
@@ -90,10 +90,10 @@ export default function AdminTasks() {
             {rows.length === 0 && <EmptyRow colSpan={5} />}
             {rows.map((row) => (
               <tr key={row._id}>
-                <td>{formatDate(row.date)}</td>
-                <td>{row.title || "-"}</td>
-                <td>{row.assignedTo?.map((user) => user?.name || user?.email || "Nhân viên").join(", ") || "-"}</td>
-                <td>
+                <td data-label="Ngày">{formatDate(row.date)}</td>
+                <td data-label="Tiêu đề">{row.title || "-"}</td>
+                <td data-label="Nhân viên">{row.assignedTo?.map((user) => user?.name || user?.email || "Nhân viên").join(", ") || "-"}</td>
+                <td data-label="Trạng thái">
                   <div className="status-stack">
                     {(row.statusByUser || []).map((item, index) => (
                       <span className="status-with-name" key={item._id || `${row._id}-${index}`}>
@@ -103,7 +103,7 @@ export default function AdminTasks() {
                     ))}
                   </div>
                 </td>
-                <td>{row.description || "-"}</td>
+                <td data-label="Mô tả">{row.description || "-"}</td>
               </tr>
             ))}
           </tbody>

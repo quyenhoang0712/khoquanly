@@ -98,7 +98,7 @@ export default function AdminSalaries() {
         <article className="stat-card"><div><span>Tổng lương</span><strong>{formatCurrency(summary.salary)}</strong></div></article>
       </div>
 
-      <div className="panel table-wrap">
+      <div className="panel table-wrap mobile-card-table">
         <table>
           <thead>
             <tr>
@@ -116,12 +116,12 @@ export default function AdminSalaries() {
             {!loading &&
               rows.map((row) => (
                 <tr key={row.user?._id || row.user?.email}>
-                  <td><strong>{row.user?.name || "Nhân viên"}</strong></td>
-                  <td>{row.user?.email || "-"}</td>
-                  <td>{formatNumber(row.totalShifts)}</td>
-                  <td>{formatNumber(row.totalHours)}</td>
-                  <td><strong>{formatCurrency(row.totalSalary)}</strong></td>
-                  <td><button className="button small ghost" type="button" onClick={() => openDetail(row.user?._id)}>Xem</button></td>
+                  <td data-label="Nhân viên"><strong>{row.user?.name || "Nhân viên"}</strong></td>
+                  <td data-label="Email">{row.user?.email || "-"}</td>
+                  <td data-label="Tổng ca">{formatNumber(row.totalShifts)}</td>
+                  <td data-label="Tổng giờ">{formatNumber(row.totalHours)}</td>
+                  <td data-label="Tổng lương"><strong>{formatCurrency(row.totalSalary)}</strong></td>
+                  <td data-label="Chi tiết"><button className="button small ghost" type="button" onClick={() => openDetail(row.user?._id)}>Xem</button></td>
                 </tr>
               ))}
           </tbody>
@@ -136,7 +136,7 @@ export default function AdminSalaries() {
             <div><span>Tổng giờ</span><strong>{formatNumber(detail.totalHours)}</strong></div>
             <div><span>Tổng lương</span><strong>{formatCurrency(detail.totalSalary)}</strong></div>
           </div>
-          <div className="table-wrap">
+          <div className="table-wrap mobile-card-table">
             <table>
               <thead>
                 <tr>
@@ -151,11 +151,11 @@ export default function AdminSalaries() {
                 {detail.details?.length === 0 && <EmptyRow colSpan={5} />}
                 {detail.details?.map((item) => (
                   <tr key={item.date}>
-                    <td>{formatDate(item.date)}</td>
-                    <td>{item.morning ? "09:00 - 13:00" : "-"}</td>
-                    <td>{item.afternoon ? "13:00 - 17:00" : "-"}</td>
-                    <td>{formatNumber(item.hours)}</td>
-                    <td>{formatCurrency(item.salary)}</td>
+                    <td data-label="Ngày">{formatDate(item.date)}</td>
+                    <td data-label="Ca sáng">{item.morning ? "09:00 - 13:00" : "-"}</td>
+                    <td data-label="Ca chiều">{item.afternoon ? "13:00 - 17:00" : "-"}</td>
+                    <td data-label="Giờ">{formatNumber(item.hours)}</td>
+                    <td data-label="Lương">{formatCurrency(item.salary)}</td>
                   </tr>
                 ))}
               </tbody>

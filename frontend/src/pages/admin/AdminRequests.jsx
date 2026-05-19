@@ -41,18 +41,18 @@ function RequestPage({ type, title }) {
       <div className="page-header"><div><p className="eyebrow">Phê duyệt</p><h1>{title}</h1></div></div>
       <Alert message={error} /><Alert message={message} type="success" />
       <div className="toolbar"><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></div>
-      <div className="panel table-wrap">
+      <div className="panel table-wrap mobile-card-table">
         <table>
           <thead><tr><th>Nhân viên</th><th>Thông tin</th><th>Ghi chú/Lý do</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
           <tbody>
             {rows.length === 0 && <EmptyRow colSpan={5} />}
             {rows.map((row) => (
               <tr key={row._id}>
-                <td>{row.user?.name}</td>
-                <td>{type === "schedule" ? `Tuần ${formatDate(row.weekStart)}: ${row.shifts.map((item) => `${formatDate(item.date)} ${shiftLabels[item.shift]}`).join(", ")}` : `${formatDate(row.date)} - ${shiftLabels[row.shift]}`}</td>
-                <td>{row.note || row.reason || "-"}</td>
-                <td><StatusBadge status={statusLabels[row.status] || row.status} /></td>
-                <td><div className="row-actions"><button className="button small primary" onClick={() => review(row._id, "approve")}>Duyệt</button><button className="button small ghost" onClick={() => review(row._id, "reject")}>Từ chối</button></div></td>
+                <td data-label="Nhân viên">{row.user?.name}</td>
+                <td data-label="Thông tin">{type === "schedule" ? `Tuần ${formatDate(row.weekStart)}: ${row.shifts.map((item) => `${formatDate(item.date)} ${shiftLabels[item.shift]}`).join(", ")}` : `${formatDate(row.date)} - ${shiftLabels[row.shift]}`}</td>
+                <td data-label="Ghi chú/Lý do">{row.note || row.reason || "-"}</td>
+                <td data-label="Trạng thái"><StatusBadge status={statusLabels[row.status] || row.status} /></td>
+                <td data-label="Thao tác"><div className="row-actions"><button className="button small primary" onClick={() => review(row._id, "approve")}>Duyệt</button><button className="button small ghost" onClick={() => review(row._id, "reject")}>Từ chối</button></div></td>
               </tr>
             ))}
           </tbody>
