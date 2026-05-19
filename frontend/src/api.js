@@ -1,0 +1,144 @@
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+const TOKEN_KEY = "workforce_token";
+const USER_KEY = "workforce_user";
+
+export const authStorage = {
+  getToken: () => localStorage.getItem(TOKEN_KEY),
+  getUser() {
+    const user = localStorage.getItem(USER_KEY);
+    return user ? JSON.parse(user) : null;
+  },
+  setSession(token, user) {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  },
+  clearSession() {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+  },
+};
+
+const parseResponse = async (response) => {
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    if (response.status === 401 && window.location.pathname !== "/login") {
+      authStorage.clearSession();
+      window.location.assign("/login");
+    }
+    throw new Error(data.message || "Request failed");
+  }
+  return data;
+};
+
+const request = async (url, options = {}) => {
+  const headers = { ...(options.headers || {}) };
+  const token = authStorage.getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  try {
+    return await fetch(url, { ...options, headers });
+  } catch (error) {
+    throw new Error("Không kết nối được backend. Hãy chạy backend ở http://localhost:5001");
+  }
+};
+
+const query = (params = {}) => {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") searchParams.append(key, value);
+  });
+  const value = searchParams.toString();
+  return value ? `?${value}` : "";
+};
+
+const jsonOptions = (method, payload) => ({
+  method,
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(payload),
+});
+
+export const api = {
+  async login(payload) {
+    return parseResponse(await request(`${API_BASE_URL}/auth/login`, jsonOptions("POST", payload)));
+  },
+  async getCurrentUser() {
+    return parseResponse(await request(`${API_BASE_URL}/auth/me`));
+  },
+
+  async getAdminDashboard() {
+    return parseResponse(await request(`${API_BASE_URL}/admin/dashboard`));
+  },
+  async getAdminUsers() {
+    return parseResponse(await request(`${API_BASE_URL}/admin/users`));
+  },
+  async createAdminUser(payload) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/users`, jsonOptions("POST", payload)));
+  },
+  async getAdminSchedules(params) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/schedules${query(params)}`));
+  },
+  async getAdminScheduleRequests(params) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/schedule-requests${query(params)}`));
+  },
+  async reviewScheduleRequest(id, action, adminNote = "") {
+    return parseResponse(await request(`${API_BASE_URL}/admin/schedule-requests/${id}/${action}`, jsonOptions("PUT", { adminNote })));
+  },
+  async getAdminLeaveRequests(params) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/leave-requests${query(params)}`));
+  },
+  async reviewLeaveRequest(id, action, adminNote = "") {
+    return parseResponse(await request(`${API_BASE_URL}/admin/leave-requests/${id}/${action}`, jsonOptions("PUT", { adminNote })));
+  },
+  async createAdminTask(payload) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/tasks`, jsonOptions("POST", payload)));
+  },
+  async getAdminTasks(params) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/tasks${query(params)}`));
+  },
+  async getAdminReports(params) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/reports${query(params)}`));
+  },
+  async getAdminCheckouts(params) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/checkouts${query(params)}`));
+  },
+  async getAdminSalaries(params) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/salaries${query(params)}`));
+  },
+  async getAdminSalaryDetail(userId, params) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/salaries/${userId}${query(params)}`));
+  },
+
+  async getMySchedule(params) {
+    return parseResponse(await request(`${API_BASE_URL}/user/my-schedule${query(params)}`));
+  },
+  async getMyCheckouts(params) {
+    return parseResponse(await request(`${API_BASE_URL}/user/my-checkouts${query(params)}`));
+  },
+  async getCoworkers(params) {
+    return parseResponse(await request(`${API_BASE_URL}/user/coworkers${query(params)}`));
+  },
+  async createScheduleRequest(payload) {
+    return parseResponse(await request(`${API_BASE_URL}/user/schedule-requests`, jsonOptions("POST", payload)));
+  },
+  async createLeaveRequest(payload) {
+    return parseResponse(await request(`${API_BASE_URL}/user/leave-requests`, jsonOptions("POST", payload)));
+  },
+  async getTodayTasks(params) {
+    return parseResponse(await request(`${API_BASE_URL}/user/today-tasks${query(params)}`));
+  },
+  async getTask(id) {
+    return parseResponse(await request(`${API_BASE_URL}/user/tasks/${id}`));
+  },
+  async updateTaskStatus(id, status) {
+    return parseResponse(await request(`${API_BASE_URL}/user/tasks/${id}/status`, jsonOptions("PUT", { status })));
+  },
+  async submitTaskReport(id, formData) {
+    return parseResponse(await request(`${API_BASE_URL}/user/tasks/${id}/report`, { method: "POST", body: formData }));
+  },
+  async checkout(payload) {
+    return parseResponse(await request(`${API_BASE_URL}/user/checkout`, jsonOptions("POST", payload)));
+  },
+  async getMySalary(params) {
+    return parseResponse(await request(`${API_BASE_URL}/user/my-salary${query(params)}`));
+  },
+};
