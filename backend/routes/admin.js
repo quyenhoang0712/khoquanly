@@ -2,6 +2,7 @@ const express = require("express");
 const CheckoutLog = require("../models/CheckoutLog");
 const DailyTask = require("../models/DailyTask");
 const LeaveRequest = require("../models/LeaveRequest");
+const ReportImage = require("../models/ReportImage");
 const TaskReport = require("../models/TaskReport");
 const User = require("../models/User");
 const WeeklyScheduleRequest = require("../models/WeeklyScheduleRequest");
@@ -328,6 +329,36 @@ router.get("/tasks", async (req, res, next) => {
     if (req.query.date) filters.date = req.query.date;
     const tasks = await DailyTask.find(filters).populate(populateAssigned).populate("statusByUser.user", "name email").sort({ date: -1 });
     res.json(tasks);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/tasks/:id", async (req, res, next) => {
+  try {
+    const task = await DailyTask.findById(req.params.id).populate(populateAssigned).populate("statusByUser.user", "name email");
+    if (!task) return res.status(404).json({ message: "Task not found" });
+    const reports = await TaskReport.find({ task: task._id }).populate(populateUser).sort({ createdAt: -1 });
+    res.json({ task, reports });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/tasks/:id", async (req, res, next) => {
+  try {
+    const task = await DailyTask.findById(req.params.id);
+    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    const reports = await TaskReport.find({ task: task._id }).select("_id");
+    const reportIds = reports.map((report) => report._id);
+    if (reportIds.length) {
+      await ReportImage.deleteMany({ report: { $in: reportIds } });
+      await TaskReport.deleteMany({ _id: { $in: reportIds } });
+    }
+    await task.deleteOne();
+
+    res.json({ message: "Task deleted" });
   } catch (error) {
     next(error);
   }

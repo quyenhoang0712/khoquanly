@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { api } from "../../api";
 import { Alert, EmptyRow, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
-import { formatDate, statusLabels, today } from "../../utils/workforce";
+import { API_ORIGIN, formatDate, statusLabels, today } from "../../utils/workforce";
 
 export default function AdminTasks() {
   const [date, setDate] = useState(today());
   const [rows, setRows] = useState([]);
   const [users, setUsers] = useState([]);
   const [open, setOpen] = useState(false);
+  const [detail, setDetail] = useState(null);
   const [form, setForm] = useState({ title: "", description: "", date: today(), assignedTo: [] });
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -17,6 +18,28 @@ export default function AdminTasks() {
     try {
       setError("");
       setRows(await api.getAdminTasks({ date }));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const openDetail = async (taskId) => {
+    try {
+      setError("");
+      setDetail(await api.getAdminTask(taskId));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const deleteTask = async (taskId) => {
+    if (!window.confirm("Xoá công việc này? Báo cáo liên quan cũng sẽ bị xoá.")) return;
+    try {
+      setError("");
+      await api.deleteAdminTask(taskId);
+      setMessage("Đã xoá công việc.");
+      setDetail(null);
+      loadTasks();
     } catch (err) {
       setError(err.message);
     }
@@ -84,10 +107,11 @@ export default function AdminTasks() {
               <th>Nhân viên</th>
               <th>Trạng thái</th>
               <th>Mô tả</th>
+              <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && <EmptyRow colSpan={5} />}
+            {rows.length === 0 && <EmptyRow colSpan={6} />}
             {rows.map((row) => (
               <tr key={row._id}>
                 <td data-label="Ngày">{formatDate(row.date)}</td>
@@ -104,6 +128,12 @@ export default function AdminTasks() {
                   </div>
                 </td>
                 <td data-label="Mô tả">{row.description || "-"}</td>
+                <td data-label="Thao tác">
+                  <div className="row-actions">
+                    <button className="button small ghost" type="button" onClick={() => openDetail(row._id)}>Xem</button>
+                    <button className="button small danger" type="button" onClick={() => deleteTask(row._id)}>Xoá</button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -139,6 +169,56 @@ export default function AdminTasks() {
             </label>
             <button className="button primary">Giao việc</button>
           </form>
+        </Modal>
+      )}
+
+      {detail && (
+        <Modal title={`Chi tiết công việc - ${detail.task?.title || "Công việc"}`} onClose={() => setDetail(null)}>
+          <div className="task-modal-content">
+            <div className="detail-grid compact">
+              <div><span>Ngày</span><strong>{formatDate(detail.task?.date)}</strong></div>
+              <div><span>Nhân viên</span><strong>{detail.task?.assignedTo?.map((user) => user.name || user.email).join(", ") || "-"}</strong></div>
+            </div>
+
+            <div className="task-description-box">
+              <span>Mô tả công việc</span>
+              <p>{detail.task?.description || "Không có mô tả."}</p>
+            </div>
+
+            <div className="task-description-box">
+              <span>Trạng thái từng nhân viên</span>
+              <div className="status-stack">
+                {(detail.task?.statusByUser || []).map((item, index) => (
+                  <span className="status-with-name" key={item._id || index}>
+                    <small>{item.user?.name || item.user?.email || "Nhân viên"}</small>
+                    <StatusBadge status={statusLabels[item.status] || item.status || "not-started"} />
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="task-description-box">
+              <span>Báo cáo đã gửi</span>
+              {!detail.reports?.length && <p>Chưa có báo cáo.</p>}
+              {detail.reports?.map((report) => (
+                <div className="task-report-card" key={report._id}>
+                  <strong>{report.user?.name || "Nhân viên"}</strong>
+                  <p>{report.content}</p>
+                  {report.images?.length > 0 && (
+                    <div className="image-list">
+                      {report.images.map((image) => (
+                        <a key={image} href={`${API_ORIGIN}${image}`} target="_blank" rel="noreferrer">
+                          <img src={`${API_ORIGIN}${image}`} alt="report" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <button className="button danger" type="button" onClick={() => deleteTask(detail.task?._id)}>Xoá công việc</button>
+          </div>
         </Modal>
       )}
     </section>

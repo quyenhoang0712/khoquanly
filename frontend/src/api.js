@@ -104,6 +104,12 @@ export const api = {
   async getAdminTasks(params) {
     return parseResponse(await request(`${API_BASE_URL}/admin/tasks${query(params)}`));
   },
+  async getAdminTask(id) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/tasks/${id}`));
+  },
+  async deleteAdminTask(id) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/tasks/${id}`, { method: "DELETE" }));
+  },
   async getAdminReports(params) {
     return parseResponse(await request(`${API_BASE_URL}/admin/reports${query(params)}`));
   },

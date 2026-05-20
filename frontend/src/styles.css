@@ -1111,6 +1111,24 @@ tbody tr:hover {
   line-height: 1.45;
 }
 
+.task-report-card {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.035);
+}
+
+.task-report-card strong {
+  color: #111827;
+}
+
+.task-report-card p {
+  margin: 0;
+}
+
 .task-modal-content {
   display: grid;
   gap: 10px;
