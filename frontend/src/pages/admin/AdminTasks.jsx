@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../../api";
 import { Alert, EmptyRow, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
@@ -13,6 +13,8 @@ export default function AdminTasks() {
   const [form, setForm] = useState({ title: "", description: "", date: today(), assignedTo: [] });
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const loadTasks = async () => {
     try {
@@ -67,6 +69,9 @@ export default function AdminTasks() {
 
   const submit = async (event) => {
     event.preventDefault();
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setSubmitting(true);
     try {
       setError("");
       await api.createAdminTask(form);
@@ -76,6 +81,9 @@ export default function AdminTasks() {
       loadTasks();
     } catch (err) {
       setError(err.message);
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   };
 
@@ -167,7 +175,9 @@ export default function AdminTasks() {
               <span>Mô tả</span>
               <textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} />
             </label>
-            <button className="button primary">Giao việc</button>
+            <button className="button primary" disabled={submitting}>
+              {submitting ? "Đang giao..." : "Giao việc"}
+            </button>
           </form>
         </Modal>
       )}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { api } from "../../api";
 import { Alert } from "../../components/DataState";
 import { formatDate } from "../../utils/workforce";
@@ -43,11 +43,14 @@ export default function UserScheduleRequest() {
   const [choices, setChoices] = useState({});
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const weekDays = useMemo(() => buildWeekDays(weekStart), [weekStart]);
 
   const submit = async (event) => {
     event.preventDefault();
+    if (submittingRef.current) return;
     const shifts = weekDays.flatMap((day) => optionToShifts(day.date, choices[day.date]));
 
     if (shifts.length === 0) {
@@ -56,6 +59,8 @@ export default function UserScheduleRequest() {
       return;
     }
 
+    submittingRef.current = true;
+    setSubmitting(true);
     try {
       await api.createScheduleRequest({ weekStart, note, shifts });
       setMessage("Đã gửi phiếu đăng ký lịch tuần sau.");
@@ -63,6 +68,9 @@ export default function UserScheduleRequest() {
     } catch (err) {
       setError(err.message);
       setMessage("");
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   };
 
@@ -119,7 +127,9 @@ export default function UserScheduleRequest() {
             <span>Ghi chú</span>
             <textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Ví dụ: em ưu tiên ca sáng nếu cần đổi lịch" />
           </label>
-          <button className="button primary">Gửi phiếu đăng ký</button>
+          <button className="button primary" disabled={submitting}>
+            {submitting ? "Đang gửi..." : "Gửi phiếu đăng ký"}
+          </button>
         </form>
       </div>
     </section>

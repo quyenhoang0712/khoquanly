@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../api";
 import CalendarMonth, { describeShift, groupByDate, monthKey, splitMonthKey } from "../../components/CalendarMonth";
 import { Alert, EmptyRow, StatusBadge } from "../../components/DataState";
@@ -71,6 +71,8 @@ export default function AdminSchedules() {
   const [editingUserId, setEditingUserId] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const load = () => {
     api.getAdminSchedules({ ...splitMonthKey(month), userId, shift }).then(setRows).catch((err) => setError(err.message));
@@ -95,6 +97,9 @@ export default function AdminSchedules() {
 
   const submitSchedule = async (event) => {
     event.preventDefault();
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setSubmitting(true);
     try {
       setError("");
       setMessage("");
@@ -118,6 +123,9 @@ export default function AdminSchedules() {
       load();
     } catch (err) {
       setError(err.message);
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   };
 
@@ -222,7 +230,9 @@ export default function AdminSchedules() {
               </select>
             </label>
             <div className="schedule-editor-actions">
-              <button className="button primary" type="submit">{editingUserId ? "Lưu lịch" : "Thêm vào lịch"}</button>
+              <button className="button primary" type="submit" disabled={submitting}>
+                {submitting ? "Đang lưu..." : editingUserId ? "Lưu lịch" : "Thêm vào lịch"}
+              </button>
               {editingUserId && (
                 <button
                   className="button ghost"

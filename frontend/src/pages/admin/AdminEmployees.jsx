@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../api";
 import { Alert, EmptyRow, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
@@ -19,6 +19,7 @@ export default function AdminEmployees() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const loadingRef = useRef(false);
 
   const loadUsers = async () => {
     try {
@@ -42,6 +43,8 @@ export default function AdminEmployees() {
 
   const submit = async (event) => {
     event.preventDefault();
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     try {
       setLoading(true);
       setError("");
@@ -54,6 +57,7 @@ export default function AdminEmployees() {
     } catch (err) {
       setError(err.message);
     } finally {
+      loadingRef.current = false;
       setLoading(false);
     }
   };

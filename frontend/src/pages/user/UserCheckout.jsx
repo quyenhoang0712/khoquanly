@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "../../api";
 import { Alert } from "../../components/DataState";
 import { today } from "../../utils/workforce";
@@ -9,9 +9,14 @@ export default function UserCheckout() {
   const [files, setFiles] = useState([]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const submit = async (event) => {
     event.preventDefault();
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setSubmitting(true);
     try {
       const formData = new FormData();
       formData.append("date", date);
@@ -25,6 +30,9 @@ export default function UserCheckout() {
     } catch (err) {
       setError(err.message);
       setMessage("");
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   };
 
@@ -74,7 +82,9 @@ export default function UserCheckout() {
             )}
           </label>
 
-          <button className="button primary" type="submit">Checkout</button>
+          <button className="button primary" type="submit" disabled={submitting}>
+            {submitting ? "Đang checkout..." : "Checkout"}
+          </button>
         </form>
       </div>
     </section>

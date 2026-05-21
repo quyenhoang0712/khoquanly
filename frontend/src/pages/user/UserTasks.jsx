@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../../api";
 import { Alert, EmptyRow, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
@@ -13,6 +13,10 @@ export default function UserTasks() {
   const [files, setFiles] = useState([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [savingStatus, setSavingStatus] = useState(false);
+  const [submittingReport, setSubmittingReport] = useState(false);
+  const savingStatusRef = useRef(false);
+  const submittingReportRef = useRef(false);
 
   const load = () => {
     api.getTodayTasks({ date }).then(setRows).catch((err) => setError(err.message));
@@ -33,6 +37,9 @@ export default function UserTasks() {
 
   const saveStatus = async () => {
     if (!selectedTask) return;
+    if (savingStatusRef.current) return;
+    savingStatusRef.current = true;
+    setSavingStatus(true);
     try {
       const data = await api.updateTaskStatus(selectedTask._id, status);
       setSelectedTask(data);
@@ -40,12 +47,18 @@ export default function UserTasks() {
       load();
     } catch (err) {
       setError(err.message);
+    } finally {
+      savingStatusRef.current = false;
+      setSavingStatus(false);
     }
   };
 
   const submitReport = async (event) => {
     event.preventDefault();
     if (!selectedTask) return;
+    if (submittingReportRef.current) return;
+    submittingReportRef.current = true;
+    setSubmittingReport(true);
 
     try {
       const formData = new FormData();
@@ -60,6 +73,9 @@ export default function UserTasks() {
       load();
     } catch (err) {
       setError(err.message);
+    } finally {
+      submittingReportRef.current = false;
+      setSubmittingReport(false);
     }
   };
 
@@ -123,7 +139,9 @@ export default function UserTasks() {
               <option value="completed">Đã xong</option>
             </select>
           </label>
-          <button className="button small ghost" type="button" onClick={saveStatus}>Lưu trạng thái</button>
+          <button className="button small ghost" type="button" onClick={saveStatus} disabled={savingStatus}>
+            {savingStatus ? "Đang lưu..." : "Lưu trạng thái"}
+          </button>
 
           <form className="product-form compact-form" onSubmit={submitReport}>
             <label className="field">
@@ -145,7 +163,9 @@ export default function UserTasks() {
                 </div>
               )}
             </label>
-            <button className="button primary">Gửi báo cáo</button>
+            <button className="button primary" disabled={submittingReport}>
+              {submittingReport ? "Đang gửi..." : "Gửi báo cáo"}
+            </button>
           </form>
           </div>
         </Modal>
