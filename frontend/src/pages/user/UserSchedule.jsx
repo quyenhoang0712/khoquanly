@@ -3,7 +3,7 @@ import { api } from "../../api";
 import CalendarMonth, { describeShift, groupByDate, monthKey, splitMonthKey } from "../../components/CalendarMonth";
 import { Alert, EmptyRow, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
-import { API_ORIGIN, formatDate, shiftLabels, statusLabels } from "../../utils/workforce";
+import { assetUrl, formatDate, shiftLabels, statusLabels } from "../../utils/workforce";
 
 export default function UserSchedule() {
   const [month, setMonth] = useState(monthKey());
@@ -77,8 +77,8 @@ export default function UserSchedule() {
               <span>Ảnh checkout</span>
               <div className="image-list">
                 {checkout.images.map((image) => (
-                  <a key={image} href={`${API_ORIGIN}${image}`} target="_blank" rel="noreferrer">
-                    <img src={`${API_ORIGIN}${image}`} alt="checkout" />
+                  <a key={image} href={assetUrl(image)} target="_blank" rel="noreferrer">
+                    <img src={assetUrl(image)} alt="checkout" />
                   </a>
                 ))}
               </div>

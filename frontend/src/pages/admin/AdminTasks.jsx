@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../api";
 import { Alert, EmptyRow, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
-import { API_ORIGIN, formatDate, statusLabels, today } from "../../utils/workforce";
+import { assetUrl, formatDate, statusLabels, today } from "../../utils/workforce";
 
 export default function AdminTasks() {
   const [date, setDate] = useState(today());
@@ -207,8 +207,8 @@ export default function AdminTasks() {
                   {report.images?.length > 0 && (
                     <div className="image-list">
                       {report.images.map((image) => (
-                        <a key={image} href={`${API_ORIGIN}${image}`} target="_blank" rel="noreferrer">
-                          <img src={`${API_ORIGIN}${image}`} alt="report" />
+                        <a key={image} href={assetUrl(image)} target="_blank" rel="noreferrer">
+                          <img src={assetUrl(image)} alt="report" />
                         </a>
                       ))}
                     </div>

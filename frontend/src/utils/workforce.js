@@ -1,4 +1,22 @@
-export const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:5001/api").replace("/api", "");
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+
+export const API_ORIGIN = (() => {
+  try {
+    const url = new URL(API_URL, window.location.origin);
+    url.pathname = url.pathname.replace(/\/api\/?$/, "");
+    url.search = "";
+    url.hash = "";
+    return url.origin + url.pathname.replace(/\/$/, "");
+  } catch {
+    return API_URL.replace(/\/api\/?$/, "").replace(/\/$/, "");
+  }
+})();
+
+export const assetUrl = (path) => {
+  if (!path) return "";
+  if (/^(https?:)?\/\//.test(path) || path.startsWith("data:") || path.startsWith("blob:")) return path;
+  return `${API_ORIGIN}${path.startsWith("/") ? "" : "/"}${path}`;
+};
 
 export const shiftLabels = {
   morning: "Ca sáng",

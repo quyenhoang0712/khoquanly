@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api";
 import { Alert, EmptyRow } from "../../components/DataState";
-import { API_ORIGIN, formatDate, today } from "../../utils/workforce";
+import { assetUrl, formatDate, today } from "../../utils/workforce";
 
 export default function AdminCheckouts() {
   const [date, setDate] = useState(today());
@@ -50,8 +50,8 @@ export default function AdminCheckouts() {
                   {row.images?.length ? (
                     <div className="image-list">
                       {row.images.map((image) => (
-                        <a key={image} href={`${API_ORIGIN}${image}`} target="_blank" rel="noreferrer">
-                          <img src={`${API_ORIGIN}${image}`} alt="checkout" />
+                        <a key={image} href={assetUrl(image)} target="_blank" rel="noreferrer">
+                          <img src={assetUrl(image)} alt="checkout" />
                         </a>
                       ))}
                     </div>
