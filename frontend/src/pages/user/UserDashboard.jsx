@@ -1,4 +1,4 @@
-import { CalendarCheck, ClipboardList, Clock, Wallet } from "lucide-react";
+import { CalendarCheck, ClipboardList, Clock, Megaphone, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "../../api";
 import { Alert } from "../../components/DataState";
@@ -25,5 +25,39 @@ export default function UserDashboard() {
     ["Lương tạm tính", formatCurrency(salary?.totalSalary || 0), Wallet, "amber"],
   ];
 
-  return <section className="page"><div className="page-header"><div><p className="eyebrow">Cá nhân</p><h1>Dashboard nhân viên</h1></div></div><Alert message={error} /><div className="stats-grid">{stats.map(([label, value, Icon, tone]) => <article className="stat-card" key={label}><div className={`stat-icon ${tone}`}><Icon size={22} /></div><div><span>{label}</span><strong>{value}</strong></div></article>)}</div></section>;
+  return (
+    <section className="page">
+      <div className="page-header">
+        <div>
+          <p className="eyebrow">Cá nhân</p>
+          <h1>Dashboard nhân viên</h1>
+        </div>
+      </div>
+      <Alert message={error} />
+      <div className="dashboard-note">
+        <div className="dashboard-note-icon">
+          <Megaphone size={24} />
+        </div>
+        <div>
+          <span>Lời nhắn hôm nay</span>
+          <p>
+            Hello các babi của a Q, các em nhớ check công việc hôm nay và làm báo cáo cho a nhé. Sau đó lúc về nhớ check out cho a nheee.
+          </p>
+        </div>
+      </div>
+      <div className="stats-grid">
+        {stats.map(([label, value, Icon, tone]) => (
+          <article className="stat-card" key={label}>
+            <div className={`stat-icon ${tone}`}>
+              <Icon size={22} />
+            </div>
+            <div>
+              <span>{label}</span>
+              <strong>{value}</strong>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
 }
