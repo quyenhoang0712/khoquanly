@@ -9,6 +9,7 @@ const ReportImage = require("../models/ReportImage");
 const TaskReport = require("../models/TaskReport");
 const WeeklyScheduleRequest = require("../models/WeeklyScheduleRequest");
 const WorkSchedule = require("../models/WorkSchedule");
+const { autoCheckoutPastSchedules } = require("../utils/checkout");
 const { calculateSalary } = require("../utils/salary");
 const { todayString } = require("../utils/date");
 
@@ -39,6 +40,7 @@ router.get("/my-schedule", async (req, res, next) => {
 
 router.get("/my-checkouts", async (req, res, next) => {
   try {
+    await autoCheckoutPastSchedules();
     const filters = { user: req.user.id };
     if (req.query.date) filters.date = req.query.date;
     if (req.query.month && req.query.year) {
@@ -183,9 +185,10 @@ router.post("/checkout", upload.array("images", 6), async (req, res, next) => {
 
 router.get("/my-salary", async (req, res, next) => {
   try {
-    const now = new Date();
-    const month = Number(req.query.month || now.getMonth() + 1);
-    const year = Number(req.query.year || now.getFullYear());
+    await autoCheckoutPastSchedules();
+    const [currentYear, currentMonth] = todayString().split("-").map(Number);
+    const month = Number(req.query.month || currentMonth);
+    const year = Number(req.query.year || currentYear);
     res.json({ month, year, ...(await calculateSalary(req.user.id, month, year)) });
   } catch (error) {
     next(error);

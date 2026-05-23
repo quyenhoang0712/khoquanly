@@ -1,8 +1,27 @@
 const pad = (value) => String(value).padStart(2, "0");
+const APP_TIME_ZONE = "Asia/Ho_Chi_Minh";
 
 const toDateString = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 
-const todayString = () => toDateString(new Date());
+const datePartsInTimeZone = (date = new Date(), timeZone = APP_TIME_ZONE) =>
+  Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+      .formatToParts(date)
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value])
+  );
+
+const todayString = (date = new Date()) => {
+  const parts = datePartsInTimeZone(date);
+  return `${parts.year}-${parts.month}-${parts.day}`;
+};
+
+const dateTimeInAppTimeZone = (date, time = "00:00:00") => new Date(`${date}T${time}+07:00`);
 
 const monthRange = (month, year) => {
   const start = `${year}-${pad(month)}-01`;
@@ -22,4 +41,4 @@ const salaryPeriodRange = (month, year) => {
   };
 };
 
-module.exports = { todayString, monthRange, salaryPeriodRange };
+module.exports = { APP_TIME_ZONE, todayString, dateTimeInAppTimeZone, monthRange, salaryPeriodRange };

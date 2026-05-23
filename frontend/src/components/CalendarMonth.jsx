@@ -1,9 +1,9 @@
-import { formatDate, shiftLabels } from "../utils/workforce";
+import { formatDate, shiftLabels, today as todayString } from "../utils/workforce";
 
 const weekDays = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 
 const pad = (value) => String(value).padStart(2, "0");
-const todayString = () => new Date().toISOString().slice(0, 10);
+const dayNumber = (date) => Number(date.split("-")[2]);
 
 export const monthKey = (date = new Date()) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
 
@@ -51,7 +51,7 @@ export default function CalendarMonth({ month, itemsByDate, onDayClick, renderMe
               {date && (
                 <>
                   <div className="calendar-day-top">
-                    <div className="calendar-day-number">{new Date(date).getDate()}</div>
+                    <div className="calendar-day-number">{dayNumber(date)}</div>
                     {isToday && <span className="today-pill">Hôm nay</span>}
                   </div>
                   <div className="calendar-events">

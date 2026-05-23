@@ -1,6 +1,6 @@
 const CheckoutLog = require("../models/CheckoutLog");
 const WorkSchedule = require("../models/WorkSchedule");
-const { todayString } = require("./date");
+const { dateTimeInAppTimeZone, todayString } = require("./date");
 
 const autoCheckoutPastSchedules = async () => {
   const today = todayString();
@@ -26,7 +26,7 @@ const autoCheckoutPastSchedules = async () => {
         $setOnInsert: {
           user: item.user,
           date: item.date,
-          checkoutAt: new Date(`${item.date}T17:05:00.000Z`),
+          checkoutAt: dateTimeInAppTimeZone(item.date, "17:05:00"),
           note: "Tự động checkout cho ngày đã qua.",
         },
       },

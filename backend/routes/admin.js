@@ -16,11 +16,23 @@ const router = express.Router();
 const populateUser = { path: "user", select: "name email role" };
 const populateAssigned = { path: "assignedTo", select: "name email" };
 
+const requestOrigin = (req) => {
+  const protocol = req.get("x-forwarded-proto") || req.protocol;
+  const host = req.get("x-forwarded-host") || req.get("host");
+  return `${protocol}://${host}`;
+};
+
+const publicAssetUrl = (req, path) => {
+  if (!path) return "";
+  if (/^(https?:)?\/\//.test(path) || path.startsWith("data:") || path.startsWith("blob:")) return path;
+  return `${requestOrigin(req)}${path.startsWith("/") ? "" : "/"}${path}`;
+};
+
 const parseMonthYear = (query) => {
-  const now = new Date();
+  const [currentYear, currentMonth] = todayString().split("-").map(Number);
   return {
-    month: Number(query.month || now.getMonth() + 1),
-    year: Number(query.year || now.getFullYear()),
+    month: Number(query.month || currentMonth),
+    year: Number(query.year || currentYear),
   };
 };
 
@@ -129,6 +141,7 @@ router.post("/users", async (req, res, next) => {
 
 router.get("/dashboard", async (req, res, next) => {
   try {
+    await autoCheckoutPastSchedules();
     const date = req.query.date || todayString();
     const [employees, pendingSchedules, pendingLeaves, tasks, reports, checkouts] = await Promise.all([
       User.countDocuments({ role: "user", active: true }),
@@ -377,10 +390,17 @@ router.get("/reports", async (req, res, next) => {
 
 router.get("/checkouts", async (req, res, next) => {
   try {
+    await autoCheckoutPastSchedules();
     const filters = {};
     if (req.query.date) filters.date = req.query.date;
     const checkouts = await CheckoutLog.find(filters).populate(populateUser).sort({ checkoutAt: -1 });
-    res.json(checkouts);
+    res.json(
+      checkouts.map((checkout) => {
+        const item = checkout.toObject();
+        item.imageUrls = (item.images || []).map((image) => publicAssetUrl(req, image));
+        return item;
+      })
+    );
   } catch (error) {
     next(error);
   }
@@ -388,6 +408,7 @@ router.get("/checkouts", async (req, res, next) => {
 
 router.get("/salaries", async (req, res, next) => {
   try {
+    await autoCheckoutPastSchedules();
     const { month, year } = parseMonthYear(req.query);
     const employees = await User.find({ role: "user", active: true }).select("-password").sort({ name: 1 });
     const salaries = await Promise.all(
@@ -406,6 +427,7 @@ router.get("/salaries", async (req, res, next) => {
 
 router.get("/salaries/:userId", async (req, res, next) => {
   try {
+    await autoCheckoutPastSchedules();
     const { month, year } = parseMonthYear(req.query);
     const user = await User.findById(req.params.userId).select("-password");
     if (!user) return res.status(404).json({ message: "Employee not found" });

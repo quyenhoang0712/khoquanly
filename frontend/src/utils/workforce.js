@@ -35,19 +35,19 @@ export const statusLabels = {
   completed: "Completed",
 };
 
-export const formatDate = (value) => (value ? new Date(value).toLocaleDateString("vi-VN") : "-");
-export const today = () => new Date().toISOString().slice(0, 10);
-
-export const formatCurrency = (value) =>
-  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(Number(value || 0));
-
-export const formatNumber = (value) => new Intl.NumberFormat("vi-VN").format(Number(value || 0));
-
 const toLocalDateString = (date) => {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${date.getFullYear()}-${month}-${day}`;
 };
+
+export const formatDate = (value) => (value ? new Date(value).toLocaleDateString("vi-VN") : "-");
+export const today = () => toLocalDateString(new Date());
+
+export const formatCurrency = (value) =>
+  new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(Number(value || 0));
+
+export const formatNumber = (value) => new Intl.NumberFormat("vi-VN").format(Number(value || 0));
 
 export const salaryPeriodRange = (month, year) => {
   const startDate = new Date(Number(year), Number(month) - 1, 11);

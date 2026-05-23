@@ -9,6 +9,7 @@ const seedDefaults = require("./seed");
 const adminRoutes = require("./routes/admin");
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
+const { autoCheckoutPastSchedules } = require("./utils/checkout");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -61,6 +62,7 @@ mongoose
   .connect(MONGO_URI)
   .then(async () => {
     await seedDefaults();
+    await autoCheckoutPastSchedules();
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
     });
