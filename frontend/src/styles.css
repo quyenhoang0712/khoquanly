@@ -33,9 +33,17 @@
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
 body {
   margin: 0;
   min-width: 320px;
+  overflow-x: hidden;
+  overflow-y: auto;
   background:
     radial-gradient(circle at top right, rgba(47, 109, 246, 0.08), transparent 32rem),
     var(--slate-50);
@@ -147,7 +155,8 @@ button {
 .app-shell {
   min-height: 100vh;
   display: flex;
-  overflow-x: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
 }
 
 .sidebar {
@@ -252,6 +261,7 @@ button {
 .main-content {
   flex: 1;
   min-width: 0;
+  min-height: 100vh;
   margin-left: 302px;
   padding: 34px;
 }
@@ -2037,7 +2047,8 @@ tbody tr:hover {
   }
 
   .main-content {
-    padding: 70px 10px 22px;
+    min-height: 100dvh;
+    padding: 70px 10px max(28px, env(safe-area-inset-bottom));
   }
 
   .page {
@@ -2269,21 +2280,54 @@ tbody tr:hover {
   }
 
   .mobile-card-table td {
-    padding: 8px 0;
+    display: grid;
+    grid-template-columns: minmax(88px, 34%) minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
     border-bottom: 0;
   }
 
   .mobile-card-table td::before {
     content: attr(data-label);
     display: block;
-    margin-bottom: 3px;
+    min-width: 0;
+    margin-bottom: 0;
     color: #64748b;
     font-size: 11px;
     font-weight: 900;
     text-transform: uppercase;
+    line-height: 1.2;
+  }
+
+  .mobile-card-table td > * {
+    min-width: 0;
+    justify-self: start;
+  }
+
+  .mobile-card-table .badge {
+    min-width: 0;
+    max-width: 100%;
+    padding: 6px 10px;
+    font-size: 12px;
+    line-height: 1.15;
+    white-space: normal;
   }
 
   .mobile-card-table td .button {
+    width: 100%;
+  }
+
+  .mobile-card-table td[data-label="Thao tác"] {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .mobile-card-table td[data-label="Thao tác"]::before {
+    margin-bottom: 6px;
+  }
+
+  .mobile-card-table td[data-label="Thao tác"] > * {
     width: 100%;
   }
 
