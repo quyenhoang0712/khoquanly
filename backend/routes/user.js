@@ -1,7 +1,5 @@
 const express = require("express");
-const fs = require("fs");
 const multer = require("multer");
-const path = require("path");
 const CheckoutLog = require("../models/CheckoutLog");
 const DailyTask = require("../models/DailyTask");
 const LeaveRequest = require("../models/LeaveRequest");
@@ -10,18 +8,19 @@ const TaskReport = require("../models/TaskReport");
 const WeeklyScheduleRequest = require("../models/WeeklyScheduleRequest");
 const WorkSchedule = require("../models/WorkSchedule");
 const { autoCheckoutPastSchedules } = require("../utils/checkout");
+const { uploadImages } = require("../utils/cloudinary");
 const { calculateSalary } = require("../utils/salary");
 const { todayString } = require("../utils/date");
 
 const router = express.Router();
-const uploadDir = path.join(__dirname, "..", "uploads", "reports");
-fs.mkdirSync(uploadDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: uploadDir,
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`),
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, files: 6 },
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith("image/")) return cb(new Error("Only image uploads are allowed"));
+    cb(null, true);
+  },
 });
-const upload = multer({ storage });
 
 router.get("/my-schedule", async (req, res, next) => {
   try {
@@ -150,7 +149,7 @@ router.post("/tasks/:id/report", upload.array("images", 6), async (req, res, nex
     if (!task) return res.status(404).json({ message: "Task not found" });
     if (!req.body.content) return res.status(400).json({ message: "Report content is required" });
 
-    const imagePaths = (req.files || []).map((file) => `/uploads/reports/${file.filename}`);
+    const imagePaths = await uploadImages(req.files || []);
     const report = await TaskReport.create({ task: task._id, user: req.user.id, date: task.date, content: req.body.content, images: imagePaths });
     await ReportImage.insertMany(imagePaths.map((item, index) => ({ report: report._id, user: req.user.id, path: item, originalName: req.files[index].originalname })));
 
@@ -163,7 +162,7 @@ router.post("/tasks/:id/report", upload.array("images", 6), async (req, res, nex
 router.post("/checkout", upload.array("images", 6), async (req, res, next) => {
   try {
     const date = req.body.date || todayString();
-    const imagePaths = (req.files || []).map((file) => `/uploads/reports/${file.filename}`);
+    const imagePaths = await uploadImages(req.files || []);
     const update = {
       user: req.user.id,
       date,

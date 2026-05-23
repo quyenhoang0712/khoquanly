@@ -38,6 +38,16 @@ Backend chạy tại:
 http://localhost:5001
 ```
 
+Upload ảnh dùng Cloudinary. Trong `backend/.env`, cần cấu hình:
+
+```text
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+```
+
+Mongo chỉ lưu URL ảnh Cloudinary trong field `images`, không lưu file ảnh.
+
 ## Chạy frontend
 
 ```bash
@@ -96,4 +106,4 @@ POST /api/user/checkout
 GET /api/user/my-salary?month=&year=
 ```
 
-Upload ảnh báo cáo dùng `multipart/form-data`, field ảnh là `images`.
+Upload ảnh báo cáo và checkout dùng `multipart/form-data`, field ảnh là `images`.
