@@ -96,6 +96,50 @@ textarea {
   }
 }
 
+@keyframes pageFloatIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes panelFloatIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes rowFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes modalLiftIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 22px, 0) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
 button {
   cursor: pointer;
 }
@@ -216,6 +260,7 @@ button {
   width: 100%;
   max-width: 1240px;
   margin: 0 auto;
+  animation: pageFloatIn 0.42s ease both;
 }
 
 .top-nav {
@@ -315,6 +360,7 @@ button {
 
 .page-header {
   margin-bottom: 24px;
+  animation: pageFloatIn 0.46s ease both;
 }
 
 .eyebrow {
@@ -439,6 +485,7 @@ h2 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 20px;
   margin-bottom: 24px;
+  animation: panelFloatIn 0.48s ease both;
 }
 
 .stat-card,
@@ -454,11 +501,11 @@ h2 {
   align-items: center;
   gap: 16px;
   padding: 22px;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
   box-shadow: var(--shadow-md);
 }
 
@@ -510,6 +557,14 @@ h2 {
     linear-gradient(135deg, rgba(47, 109, 246, 0.1), rgba(16, 185, 129, 0.08)),
     rgba(255, 255, 255, 0.92);
   box-shadow: var(--shadow-sm);
+  animation: panelFloatIn 0.5s ease both;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.dashboard-note:hover {
+  transform: translateY(-2px);
+  border-color: rgba(47, 109, 246, 0.28);
+  box-shadow: var(--shadow-md);
 }
 
 .dashboard-note-icon {
@@ -571,6 +626,13 @@ h2 {
 .panel {
   overflow: hidden;
   min-width: 0;
+  animation: panelFloatIn 0.5s ease both;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.panel:hover {
+  border-color: rgba(47, 109, 246, 0.16);
+  box-shadow: var(--shadow-md);
 }
 
 .panel-header {
@@ -590,6 +652,14 @@ h2 {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.78);
   box-shadow: var(--shadow-sm);
+  animation: panelFloatIn 0.46s ease both;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.toolbar:hover {
+  transform: translateY(-1px);
+  border-color: rgba(47, 109, 246, 0.16);
+  box-shadow: var(--shadow-md);
 }
 
 .search-box {
@@ -622,7 +692,7 @@ select,
   color: var(--slate-900);
   background: var(--white);
   outline: 0;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, transform 0.18s ease;
 }
 
 select:focus,
@@ -631,6 +701,7 @@ select:focus,
 .field textarea:focus {
   border-color: #9bbcff;
   box-shadow: 0 0 0 4px rgba(47, 109, 246, 0.12);
+  transform: translateY(-1px);
 }
 
 select {
@@ -683,6 +754,16 @@ td {
 
 tbody tr:hover {
   background: #f8fbff;
+}
+
+tbody tr {
+  animation: rowFadeIn 0.38s ease both;
+  transition: background 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+tbody tr:hover {
+  transform: translateX(3px);
+  box-shadow: inset 4px 0 0 rgba(47, 109, 246, 0.18);
 }
 
 .product-name strong,
@@ -757,6 +838,7 @@ tbody tr:hover {
   justify-content: center;
   color: var(--slate-700);
   background: var(--white);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
 }
 
 .icon-button:hover {
@@ -780,6 +862,7 @@ tbody tr:hover {
   padding: 13px 15px;
   border-radius: 14px;
   font-weight: 700;
+  animation: panelFloatIn 0.34s ease both;
 }
 
 .alert.danger {
@@ -820,6 +903,11 @@ tbody tr:hover {
   gap: 8px;
   color: var(--slate-700);
   font-weight: 700;
+  transition: transform 0.18s ease;
+}
+
+.field:focus-within {
+  transform: translateY(-1px);
 }
 
 .field span {
@@ -850,6 +938,7 @@ tbody tr:hover {
   padding: 18px;
   background: rgba(15, 23, 42, 0.52);
   backdrop-filter: blur(8px);
+  animation: pageFloatIn 0.18s ease both;
 }
 
 .modal {
@@ -861,6 +950,7 @@ tbody tr:hover {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  animation: modalLiftIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 .modal-header {
@@ -933,6 +1023,13 @@ tbody tr:hover {
   border: 1px solid var(--slate-200);
   border-radius: 14px;
   object-fit: cover;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.image-list a:hover img {
+  transform: translateY(-2px) scale(1.03);
+  border-color: rgba(47, 109, 246, 0.3);
+  box-shadow: var(--shadow-sm);
 }
 
 .checkout-image-actions {
@@ -951,6 +1048,13 @@ tbody tr:hover {
   border-radius: 8px;
   background: #fff;
   cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.checkout-thumb-button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(47, 109, 246, 0.3);
+  box-shadow: var(--shadow-sm);
 }
 
 .checkout-thumb-button img {
@@ -1141,6 +1245,13 @@ tbody tr:hover {
   overflow: hidden;
   background: var(--white);
   box-shadow: var(--shadow-md);
+  animation: panelFloatIn 0.5s ease both;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.calendar-card:hover {
+  border-color: rgba(47, 109, 246, 0.16);
+  box-shadow: var(--shadow-lg);
 }
 
 .calendar-weekdays,
@@ -1176,12 +1287,13 @@ tbody tr:hover {
   color: var(--slate-900);
   text-align: left;
   background: var(--white);
-  transition: background 0.18s ease, box-shadow 0.18s ease;
+  transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
 .calendar-day:not(.empty):hover {
   background: #f8fbff;
   box-shadow: inset 0 0 0 2px rgba(47, 109, 246, 0.18);
+  transform: translateY(-2px);
 }
 
 .calendar-day.empty {
@@ -1300,6 +1412,14 @@ tbody tr:hover {
   border: 1px solid var(--slate-200);
   border-radius: 16px;
   background: var(--slate-50);
+  animation: panelFloatIn 0.42s ease both;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.detail-grid > div:hover {
+  transform: translateY(-2px);
+  border-color: rgba(47, 109, 246, 0.18);
+  box-shadow: var(--shadow-sm);
 }
 
 .detail-grid span,
@@ -1322,6 +1442,7 @@ tbody tr:hover {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.76)),
     rgba(255, 255, 255, 0.86);
+  animation: panelFloatIn 0.42s ease both;
 }
 
 .task-description-box span {
@@ -1348,6 +1469,14 @@ tbody tr:hover {
   border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 16px;
   background: rgba(15, 23, 42, 0.035);
+  animation: panelFloatIn 0.38s ease both;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.task-report-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(47, 109, 246, 0.18);
+  box-shadow: var(--shadow-sm);
 }
 
 .task-report-card strong {
