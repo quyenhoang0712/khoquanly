@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "migrate:cloudinary": "node scripts/migrate-local-images-to-cloudinary.js"
   },
   "keywords": [],
   "author": "",

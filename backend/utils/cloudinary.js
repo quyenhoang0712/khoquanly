@@ -59,4 +59,4 @@ const uploadImage = async (file, folder = DEFAULT_FOLDER) => {
 
 const uploadImages = (files = []) => Promise.all(files.map((file) => uploadImage(file)));
 
-module.exports = { uploadImages };
+module.exports = { uploadImage, uploadImages };
