@@ -54,7 +54,7 @@ export default function Login() {
               required
             />
           </label>
-          <button className="button primary" disabled={loading}>
+          <button className="button primary login-submit" disabled={loading}>
             {loading ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>

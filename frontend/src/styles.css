@@ -53,6 +53,49 @@ textarea {
   font: inherit;
 }
 
+@keyframes loginDrift {
+  0% {
+    background-position: 0% 50%, 100% 50%, 50% 50%;
+  }
+  50% {
+    background-position: 100% 46%, 0% 54%, 50% 50%;
+  }
+  100% {
+    background-position: 0% 50%, 100% 50%, 50% 50%;
+  }
+}
+
+@keyframes loginCardFloatIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 22px, 0) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes loginContentSlide {
+  from {
+    opacity: 0;
+    transform: translate3d(-14px, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes buttonSheen {
+  from {
+    transform: translateX(-140%) skewX(-18deg);
+  }
+  to {
+    transform: translateX(220%) skewX(-18deg);
+  }
+}
+
 button {
   cursor: pointer;
 }
@@ -185,8 +228,12 @@ button {
   place-items: center;
   padding: 24px;
   background:
+    radial-gradient(circle at 18% 24%, rgba(47, 109, 246, 0.18), transparent 22rem),
+    radial-gradient(circle at 82% 76%, rgba(11, 155, 104, 0.14), transparent 24rem),
     linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(15, 39, 73, 0.04)),
     var(--slate-50);
+  background-size: 130% 130%, 140% 140%, 100% 100%;
+  animation: loginDrift 12s ease-in-out infinite;
 }
 
 .login-card {
@@ -196,6 +243,31 @@ button {
   border-radius: 20px;
   background: var(--white);
   box-shadow: var(--shadow-lg);
+  animation: loginCardFloatIn 0.62s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.login-card > * {
+  animation: loginContentSlide 0.58s ease both;
+}
+
+.login-card > *:nth-child(1) {
+  animation-delay: 0.08s;
+}
+
+.login-card > *:nth-child(2) {
+  animation-delay: 0.14s;
+}
+
+.login-card > *:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.login-card > *:nth-child(4) {
+  animation-delay: 0.26s;
+}
+
+.login-card > *:nth-child(5) {
+  animation-delay: 0.32s;
 }
 
 .login-card h1 {
@@ -210,6 +282,23 @@ button {
 .login-form {
   display: grid;
   gap: 18px;
+}
+
+.login-form .field,
+.login-submit {
+  animation: loginContentSlide 0.56s ease both;
+}
+
+.login-form .field:nth-child(1) {
+  animation-delay: 0.38s;
+}
+
+.login-form .field:nth-child(2) {
+  animation-delay: 0.46s;
+}
+
+.login-submit {
+  animation-delay: 0.54s;
 }
 
 .page-header,
@@ -260,6 +349,8 @@ h2 {
 }
 
 .button {
+  position: relative;
+  overflow: hidden;
   min-height: 44px;
   max-width: 100%;
   display: inline-flex;
@@ -271,7 +362,18 @@ h2 {
   border-radius: 14px;
   font-weight: 700;
   white-space: nowrap;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease, filter 0.18s ease;
+  will-change: transform;
+}
+
+.button::after {
+  content: "";
+  position: absolute;
+  inset: -40% auto -40% -45%;
+  width: 42%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.34), transparent);
+  opacity: 0;
 }
 
 .button.primary {
@@ -284,6 +386,18 @@ h2 {
   background: var(--blue-dark);
   transform: translateY(-1px);
   box-shadow: 0 14px 28px rgba(47, 109, 246, 0.28);
+}
+
+.button:hover::after {
+  opacity: 1;
+  animation: buttonSheen 0.72s ease;
+}
+
+.button:active,
+.icon-button:active,
+.nav-link:active,
+.top-nav-link:active {
+  transform: translateY(1px) scale(0.98);
 }
 
 .button.ghost {
@@ -314,6 +428,10 @@ h2 {
 .button:disabled {
   opacity: 0.72;
   cursor: not-allowed;
+}
+
+.button:disabled::after {
+  display: none;
 }
 
 .stats-grid {
@@ -870,6 +988,17 @@ tbody tr:hover {
   border-radius: 8px;
   object-fit: cover;
   display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 .checkout-images {
