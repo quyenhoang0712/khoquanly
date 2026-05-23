@@ -74,6 +74,9 @@ export const api = {
   async createAdminUser(payload) {
     return parseResponse(await request(`${API_BASE_URL}/admin/users`, jsonOptions("POST", payload)));
   },
+  async deleteAdminUser(id) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/users/${id}`, { method: "DELETE" }));
+  },
   async getAdminSchedules(params) {
     return parseResponse(await request(`${API_BASE_URL}/admin/schedules${query(params)}`));
   },

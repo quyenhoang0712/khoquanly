@@ -62,6 +62,19 @@ export default function AdminEmployees() {
     }
   };
 
+  const deleteUser = async (user) => {
+    if (!window.confirm(`Xoá nhân sự ${user.name}? Lịch làm, checkout và lương cũ vẫn được giữ lại.`)) return;
+    try {
+      setError("");
+      setMessage("");
+      await api.deleteAdminUser(user._id);
+      setMessage("Đã xoá nhân sự.");
+      await loadUsers();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   return (
     <section className="page">
       <div className="page-header">
@@ -114,10 +127,11 @@ export default function AdminEmployees() {
               <th>Vai trò</th>
               <th>Lương giờ</th>
               <th>Trạng thái</th>
+              <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
-            {filteredRows.length === 0 && <EmptyRow colSpan={5}>Chưa có nhân sự.</EmptyRow>}
+            {filteredRows.length === 0 && <EmptyRow colSpan={6}>Chưa có nhân sự.</EmptyRow>}
             {filteredRows.map((user) => (
               <tr key={user._id}>
                 <td data-label="Nhân viên">
@@ -131,6 +145,11 @@ export default function AdminEmployees() {
                 <td data-label="Lương giờ">{formatCurrency(user.hourlyRate)}</td>
                 <td data-label="Trạng thái">
                   <StatusBadge status={user.active ? "approved" : "rejected"} />
+                </td>
+                <td data-label="Thao tác">
+                  <button className="button small danger" type="button" onClick={() => deleteUser(user)}>
+                    Xoá
+                  </button>
                 </td>
               </tr>
             ))}

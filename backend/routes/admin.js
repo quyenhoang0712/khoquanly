@@ -139,6 +139,21 @@ router.post("/users", async (req, res, next) => {
   }
 });
 
+router.delete("/users/:id", async (req, res, next) => {
+  try {
+    const user = await User.findOneAndUpdate(
+      { _id: req.params.id, role: "user", active: true },
+      { active: false },
+      { new: true }
+    ).select("-password");
+
+    if (!user) return res.status(404).json({ message: "Không tìm thấy nhân sự" });
+    res.json({ message: "Đã xoá nhân sự", user });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get("/dashboard", async (req, res, next) => {
   try {
     await autoCheckoutPastSchedules();
