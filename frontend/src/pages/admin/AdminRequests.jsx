@@ -36,6 +36,23 @@ function RequestPage({ type, title }) {
     }
   };
 
+  const renderRequestInfo = (row) => {
+    if (type !== "schedule") return `${formatDate(row.date)} - ${shiftLabels[row.shift]}`;
+
+    return (
+      <div className="schedule-request-info">
+        <strong>Tuần {formatDate(row.weekStart)}</strong>
+        <div>
+          {row.shifts.map((item, index) => (
+            <span key={`${item.date}-${item.shift}-${index}`}>
+              {formatDate(item.date)} <b>{shiftLabels[item.shift]}</b>
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <section className="page">
       <div className="page-header"><div><p className="eyebrow">Phê duyệt</p><h1>{title}</h1></div></div>
@@ -49,7 +66,7 @@ function RequestPage({ type, title }) {
             {rows.map((row) => (
               <tr key={row._id}>
                 <td data-label="Nhân viên">{row.user?.name}</td>
-                <td data-label="Thông tin">{type === "schedule" ? `Tuần ${formatDate(row.weekStart)}: ${row.shifts.map((item) => `${formatDate(item.date)} ${shiftLabels[item.shift]}`).join(", ")}` : `${formatDate(row.date)} - ${shiftLabels[row.shift]}`}</td>
+                <td data-label="Thông tin">{renderRequestInfo(row)}</td>
                 <td data-label="Ghi chú/Lý do">{row.note || row.reason || "-"}</td>
                 <td data-label="Trạng thái"><StatusBadge status={statusLabels[row.status] || row.status} /></td>
                 <td data-label="Thao tác"><div className="row-actions"><button className="button small primary" onClick={() => review(row._id, "approve")}>Duyệt</button><button className="button small ghost" onClick={() => review(row._id, "reject")}>Từ chối</button></div></td>

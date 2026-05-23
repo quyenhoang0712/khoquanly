@@ -828,6 +828,40 @@ tbody tr:hover {
   gap: 7px;
 }
 
+.schedule-request-info {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  max-width: 560px;
+}
+
+.schedule-request-info strong {
+  color: var(--slate-900);
+}
+
+.schedule-request-info > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.schedule-request-info span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: var(--slate-700);
+  background: var(--slate-100);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.schedule-request-info b {
+  color: var(--blue);
+}
+
 .icon-button {
   width: 36px;
   height: 36px;
