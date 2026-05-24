@@ -39,7 +39,7 @@ export default function AdminTasks() {
     try {
       setError("");
       await api.deleteAdminTask(taskId);
-      setMessage("Đã xoá công việc.");
+      setMessage("Đã ghi nhận.");
       setDetail(null);
       loadTasks();
     } catch (err) {
@@ -76,7 +76,7 @@ export default function AdminTasks() {
       setError("");
       await api.createAdminTask(form);
       setOpen(false);
-      setMessage("Đã giao việc.");
+      setMessage("Đã ghi nhận.");
       setForm({ title: "", description: "", date: today(), assignedTo: [] });
       loadTasks();
     } catch (err) {

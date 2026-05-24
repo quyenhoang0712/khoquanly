@@ -29,7 +29,7 @@ function RequestPage({ type, title }) {
       setError("");
       const fn = type === "schedule" ? api.reviewScheduleRequest : api.reviewLeaveRequest;
       await fn(id, action);
-      setMessage(action === "approve" ? "Đã duyệt phiếu." : "Đã từ chối phiếu.");
+      setMessage("Đã ghi nhận.");
       load();
     } catch (err) {
       setError(err.message);

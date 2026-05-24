@@ -112,10 +112,10 @@ export default function AdminSchedules() {
 
       if (editingUserId) {
         await api.updateAdminSchedule(selectedDate, editingUserId, payload);
-        setMessage("Đã cập nhật lịch làm.");
+        setMessage("Đã ghi nhận.");
       } else {
         await api.createAdminSchedule(payload);
-        setMessage("Đã thêm nhân viên vào lịch.");
+        setMessage("Đã ghi nhận.");
       }
 
       setEditingUserId("");
@@ -146,7 +146,7 @@ export default function AdminSchedules() {
       setError("");
       setMessage("");
       await api.deleteAdminSchedule(selectedDate, targetUserId);
-      setMessage("Đã xóa lịch của nhân viên trong ngày.");
+      setMessage("Đã ghi nhận.");
       if (editingUserId === targetUserId) {
         setEditingUserId("");
         setScheduleForm({ userId: "", shiftOption: "full", status: "scheduled" });

@@ -43,7 +43,7 @@ export default function UserTasks() {
     try {
       const data = await api.updateTaskStatus(selectedTask._id, status);
       setSelectedTask(data);
-      setMessage("Đã cập nhật trạng thái.");
+      setMessage("Đã ghi nhận.");
       load();
     } catch (err) {
       setError(err.message);
@@ -66,7 +66,7 @@ export default function UserTasks() {
       files.forEach((file) => formData.append("images", file));
       await api.submitTaskReport(selectedTask._id, formData);
       if (status !== "completed") await api.updateTaskStatus(selectedTask._id, "completed");
-      setMessage("Đã gửi ảnh báo cáo và hoàn thành công việc.");
+      setMessage("Đã ghi nhận.");
       setStatus("completed");
       setContent("");
       setFiles([]);

@@ -52,7 +52,7 @@ export default function AdminEmployees() {
       await api.createAdminUser(form);
       setOpen(false);
       setForm(initialForm);
-      setMessage("Đã tạo nhân sự mới.");
+      setMessage("Đã ghi nhận.");
       await loadUsers();
     } catch (err) {
       setError(err.message);
@@ -68,7 +68,7 @@ export default function AdminEmployees() {
       setError("");
       setMessage("");
       await api.deleteAdminUser(user._id);
-      setMessage("Đã xoá nhân sự.");
+      setMessage("Đã ghi nhận.");
       await loadUsers();
     } catch (err) {
       setError(err.message);

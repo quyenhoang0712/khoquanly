@@ -84,7 +84,11 @@ router.post("/schedule-requests", async (req, res, next) => {
   try {
     const { weekStart, shifts, note } = req.body;
     if (!weekStart || !shifts?.length) return res.status(400).json({ message: "Week start and shifts are required" });
-    const request = await WeeklyScheduleRequest.create({ user: req.user.id, weekStart, shifts, note });
+    const request = await WeeklyScheduleRequest.findOneAndUpdate(
+      { user: req.user.id, weekStart, status: "pending" },
+      { user: req.user.id, weekStart, shifts, note },
+      { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+    );
     res.status(201).json(request);
   } catch (error) {
     next(error);

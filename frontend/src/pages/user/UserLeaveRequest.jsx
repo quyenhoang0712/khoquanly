@@ -17,7 +17,7 @@ export default function UserLeaveRequest() {
     setSubmitting(true);
     try {
       await api.createLeaveRequest(form);
-      setMessage("Đã gửi phiếu xin nghỉ.");
+      setMessage("Đã ghi nhận.");
       setError("");
     } catch (err) {
       setError(err.message);

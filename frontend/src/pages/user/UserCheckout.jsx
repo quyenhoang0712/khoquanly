@@ -24,7 +24,7 @@ export default function UserCheckout() {
       files.forEach((file) => formData.append("images", file));
 
       await api.checkout(formData);
-      setMessage("Checkout thành công.");
+      setMessage("Đã ghi nhận.");
       setError("");
       setFiles([]);
     } catch (err) {

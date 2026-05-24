@@ -1,5 +1,7 @@
+import { createPortal } from "react-dom";
+
 export default function Modal({ title, children, onClose }) {
-  return (
+  return createPortal(
     <div className="modal-backdrop">
       <div className="modal">
         <div className="modal-header">
@@ -10,6 +12,7 @@ export default function Modal({ title, children, onClose }) {
         </div>
         <div className="modal-body">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

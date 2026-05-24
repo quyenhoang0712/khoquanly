@@ -63,7 +63,7 @@ export default function UserScheduleRequest() {
     setSubmitting(true);
     try {
       await api.createScheduleRequest({ weekStart, note, shifts });
-      setMessage("Đã gửi phiếu đăng ký lịch tuần sau.");
+      setMessage("Đã ghi nhận.");
       setError("");
     } catch (err) {
       setError(err.message);

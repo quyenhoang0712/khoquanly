@@ -54,6 +54,28 @@ const shiftsFromOption = (shiftOption) => {
   return [];
 };
 
+const retireDuplicatePendingScheduleRequests = async () => {
+  const pending = await WeeklyScheduleRequest.find({ status: "pending" }).sort({ createdAt: -1 }).select("_id user weekStart");
+  const seen = new Set();
+  const duplicateIds = [];
+
+  pending.forEach((request) => {
+    const key = `${request.user}-${request.weekStart}`;
+    if (seen.has(key)) {
+      duplicateIds.push(request._id);
+      return;
+    }
+    seen.add(key);
+  });
+
+  if (duplicateIds.length === 0) return 0;
+  const result = await WeeklyScheduleRequest.updateMany(
+    { _id: { $in: duplicateIds }, status: "pending" },
+    { status: "rejected", adminNote: "Tự động ẩn phiếu đăng ký bị trùng.", reviewedAt: new Date() }
+  );
+  return result.modifiedCount || 0;
+};
+
 const saveEmployeeDaySchedule = async ({ userId, date, shiftOption, status, adminId }) => {
   if (!userId || !date || !shiftOption) {
     const error = new Error("Vui lòng chọn nhân viên, ngày làm và ca làm");
@@ -229,6 +251,9 @@ router.delete("/schedules/:date/:userId", async (req, res, next) => {
 
 router.get("/schedule-requests", async (req, res, next) => {
   try {
+    if (!req.query.status || req.query.status === "pending") {
+      await retireDuplicatePendingScheduleRequests();
+    }
     const filters = {};
     if (req.query.status) filters.status = req.query.status;
     const requests = await WeeklyScheduleRequest.find(filters).populate(populateUser).sort({ createdAt: -1 });
