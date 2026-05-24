@@ -38,6 +38,7 @@ export default function AdminTasks() {
     if (!window.confirm("Xoá công việc này? Báo cáo liên quan cũng sẽ bị xoá.")) return;
     try {
       setError("");
+      setMessage("");
       await api.deleteAdminTask(taskId);
       setMessage("Đã ghi nhận.");
       setDetail(null);
@@ -74,6 +75,7 @@ export default function AdminTasks() {
     setSubmitting(true);
     try {
       setError("");
+      setMessage("");
       await api.createAdminTask(form);
       setOpen(false);
       setMessage("Đã ghi nhận.");

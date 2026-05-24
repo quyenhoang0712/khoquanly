@@ -41,6 +41,8 @@ export default function UserTasks() {
     savingStatusRef.current = true;
     setSavingStatus(true);
     try {
+      setError("");
+      setMessage("");
       const data = await api.updateTaskStatus(selectedTask._id, status);
       setSelectedTask(data);
       setMessage("Đã ghi nhận.");
@@ -61,6 +63,8 @@ export default function UserTasks() {
     setSubmittingReport(true);
 
     try {
+      setError("");
+      setMessage("");
       const formData = new FormData();
       formData.append("content", content);
       files.forEach((file) => formData.append("images", file));

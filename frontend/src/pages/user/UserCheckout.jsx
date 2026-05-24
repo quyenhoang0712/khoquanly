@@ -18,6 +18,8 @@ export default function UserCheckout() {
     submittingRef.current = true;
     setSubmitting(true);
     try {
+      setError("");
+      setMessage("");
       const formData = new FormData();
       formData.append("date", date);
       formData.append("note", note);
@@ -25,7 +27,6 @@ export default function UserCheckout() {
 
       await api.checkout(formData);
       setMessage("Đã ghi nhận.");
-      setError("");
       setFiles([]);
     } catch (err) {
       setError(err.message);

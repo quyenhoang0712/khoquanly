@@ -16,9 +16,10 @@ export default function UserLeaveRequest() {
     submittingRef.current = true;
     setSubmitting(true);
     try {
+      setError("");
+      setMessage("");
       await api.createLeaveRequest(form);
       setMessage("Đã ghi nhận.");
-      setError("");
     } catch (err) {
       setError(err.message);
     } finally {

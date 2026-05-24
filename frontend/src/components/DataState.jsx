@@ -1,5 +1,27 @@
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+
 export function Alert({ message, type = "danger" }) {
+  const [visible, setVisible] = useState(Boolean(message));
+
+  useEffect(() => {
+    setVisible(Boolean(message));
+    if (!message || type !== "success") return undefined;
+
+    const timer = window.setTimeout(() => setVisible(false), 2600);
+    return () => window.clearTimeout(timer);
+  }, [message, type]);
+
   if (!message) return null;
+  if (type === "success") {
+    return createPortal(
+      <div className={`toast-notice ${visible ? "show" : "hide"}`} role="status" aria-live="polite">
+        <strong>{message}</strong>
+      </div>,
+      document.body
+    );
+  }
+
   return <div className={`alert ${type}`}>{message}</div>;
 }
 

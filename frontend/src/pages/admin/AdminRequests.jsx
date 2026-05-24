@@ -27,6 +27,7 @@ function RequestPage({ type, title }) {
   const review = async (id, action) => {
     try {
       setError("");
+      setMessage("");
       const fn = type === "schedule" ? api.reviewScheduleRequest : api.reviewLeaveRequest;
       await fn(id, action);
       setMessage("Đã ghi nhận.");

@@ -62,9 +62,10 @@ export default function UserScheduleRequest() {
     submittingRef.current = true;
     setSubmitting(true);
     try {
+      setError("");
+      setMessage("");
       await api.createScheduleRequest({ weekStart, note, shifts });
       setMessage("Đã ghi nhận.");
-      setError("");
     } catch (err) {
       setError(err.message);
       setMessage("");
