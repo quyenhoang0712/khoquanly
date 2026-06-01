@@ -32,7 +32,7 @@ export const statusLabels = {
   leave: "Nghỉ",
   "not-started": "Chưa làm",
   "in-progress": "Đang làm",
-  completed: "Completed",
+  completed: "Đã xong",
 };
 
 const toLocalDateString = (date) => {

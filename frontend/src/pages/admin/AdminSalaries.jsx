@@ -20,9 +20,11 @@ export default function AdminSalaries() {
           employees: acc.employees + 1,
           shifts: acc.shifts + Number(row.totalShifts || 0),
           hours: acc.hours + Number(row.totalHours || 0),
+          overtimeHours: acc.overtimeHours + Number(row.overtimeHours || 0),
+          overtimeSalary: acc.overtimeSalary + Number(row.overtimeSalary || 0),
           salary: acc.salary + Number(row.totalSalary || 0),
         }),
-        { employees: 0, shifts: 0, hours: 0, salary: 0 }
+        { employees: 0, shifts: 0, hours: 0, overtimeHours: 0, overtimeSalary: 0, salary: 0 }
       ),
     [rows]
   );
@@ -56,8 +58,8 @@ export default function AdminSalaries() {
   const doExport = () => {
     exportCsv(`bang-luong-ky-${month}-${year}.csv`, [
       ["Ky luong", periodLabel],
-      ["Nhan vien", "Email", "Tong ca", "Tong gio", "Tong luong"],
-      ...rows.map((row) => [row.user?.name, row.user?.email, row.totalShifts, row.totalHours, row.totalSalary]),
+      ["Nhan vien", "Email", "Tong ca", "Tong gio", "Gio tang ca", "Tien tang ca", "Tong luong"],
+      ...rows.map((row) => [row.user?.name, row.user?.email, row.totalShifts, row.totalHours, row.overtimeHours || 0, row.overtimeSalary || 0, row.totalSalary]),
     ]);
   };
 
@@ -95,37 +97,49 @@ export default function AdminSalaries() {
         <article className="stat-card"><div><span>Nhân viên</span><strong>{formatNumber(summary.employees)}</strong></div></article>
         <article className="stat-card"><div><span>Tổng ca</span><strong>{formatNumber(summary.shifts)}</strong></div></article>
         <article className="stat-card"><div><span>Tổng giờ</span><strong>{formatNumber(summary.hours)}</strong></div></article>
+        <article className="stat-card"><div><span>Tăng ca</span><strong>{formatNumber(summary.overtimeHours)} giờ</strong></div></article>
         <article className="stat-card"><div><span>Tổng lương</span><strong>{formatCurrency(summary.salary)}</strong></div></article>
       </div>
 
-      <div className="panel table-wrap mobile-card-table">
-        <table>
-          <thead>
-            <tr>
-              <th>Nhân viên</th>
-              <th>Email</th>
-              <th>Tổng ca</th>
-              <th>Tổng giờ</th>
-              <th>Tổng lương</th>
-              <th>Chi tiết</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && <EmptyRow colSpan={6}>Đang tải bảng lương...</EmptyRow>}
-            {!loading && rows.length === 0 && <EmptyRow colSpan={6} />}
-            {!loading &&
-              rows.map((row) => (
-                <tr key={row.user?._id || row.user?.email}>
-                  <td data-label="Nhân viên"><strong>{row.user?.name || "Nhân viên"}</strong></td>
-                  <td data-label="Email">{row.user?.email || "-"}</td>
-                  <td data-label="Tổng ca">{formatNumber(row.totalShifts)}</td>
-                  <td data-label="Tổng giờ">{formatNumber(row.totalHours)}</td>
-                  <td data-label="Tổng lương"><strong>{formatCurrency(row.totalSalary)}</strong></td>
-                  <td data-label="Chi tiết"><button className="button small ghost" type="button" onClick={() => openDetail(row.user?._id)}>Xem</button></td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
+      {loading && <div className="panel task-board-empty">Đang tải bảng lương...</div>}
+      {!loading && rows.length === 0 && <div className="panel task-board-empty">Không có dữ liệu.</div>}
+      <div className="task-board-grid">
+        {!loading &&
+          rows.map((row) => (
+            <article className="task-board-card" key={row.user?._id || row.user?.email}>
+              <div className="task-board-card-header">
+                <div>
+                  <span>Nhân viên</span>
+                  <strong>{row.user?.name || "Nhân viên"}</strong>
+                </div>
+                <button className="button small ghost" type="button" onClick={() => openDetail(row.user?._id)}>
+                  Xem
+                </button>
+              </div>
+              <div className="task-board-fields">
+                <div className="task-board-field-wide">
+                  <span>Email</span>
+                  <p>{row.user?.email || "-"}</p>
+                </div>
+                <div>
+                  <span>Tổng ca</span>
+                  <p>{formatNumber(row.totalShifts)}</p>
+                </div>
+                <div>
+                  <span>Tổng giờ</span>
+                  <p>{formatNumber(row.totalHours)}</p>
+                </div>
+                <div>
+                  <span>Tăng ca</span>
+                  <p>{formatNumber(row.overtimeHours || 0)} giờ · {formatCurrency(row.overtimeSalary || 0)}</p>
+                </div>
+                <div>
+                  <span>Tổng lương</span>
+                  <p><strong>{formatCurrency(row.totalSalary)}</strong></p>
+                </div>
+              </div>
+            </article>
+          ))}
       </div>
 
       {detail && (
@@ -134,6 +148,7 @@ export default function AdminSalaries() {
           <div className="salary-detail-summary">
             <div><span>Tổng ca</span><strong>{formatNumber(detail.totalShifts)}</strong></div>
             <div><span>Tổng giờ</span><strong>{formatNumber(detail.totalHours)}</strong></div>
+            <div><span>Tăng ca</span><strong>{formatNumber(detail.overtimeHours || 0)} giờ</strong></div>
             <div><span>Tổng lương</span><strong>{formatCurrency(detail.totalSalary)}</strong></div>
           </div>
           <div className="table-wrap mobile-card-table">

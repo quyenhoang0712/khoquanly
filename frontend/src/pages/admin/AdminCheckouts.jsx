@@ -28,7 +28,7 @@ export default function AdminCheckouts() {
 
       <Alert message={error} />
 
-      <div className="toolbar">
+      <div className="toolbar compact-filter">
         <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
       </div>
 

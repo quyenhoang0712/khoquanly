@@ -63,7 +63,7 @@ const summarizeDay = (items) => {
 export default function AdminSchedules() {
   const [month, setMonth] = useState(monthKey());
   const [shift, setShift] = useState("");
-  const [userId, setUserId] = useState("");
+  const [position, setPosition] = useState("");
   const [users, setUsers] = useState([]);
   const [rows, setRows] = useState([]);
   const [selectedDate, setSelectedDate] = useState("");
@@ -75,13 +75,13 @@ export default function AdminSchedules() {
   const submittingRef = useRef(false);
 
   const load = () => {
-    api.getAdminSchedules({ ...splitMonthKey(month), userId, shift }).then(setRows).catch((err) => setError(err.message));
+    api.getAdminSchedules({ ...splitMonthKey(month), position, shift }).then(setRows).catch((err) => setError(err.message));
   };
 
   useEffect(() => {
     api.getAdminUsers().then((items) => setUsers(items.filter((item) => item.role === "user"))).catch((err) => setError(err.message));
   }, []);
-  useEffect(load, [month, userId, shift]);
+  useEffect(load, [month, position, shift]);
 
   const itemsByDate = useMemo(() => groupByDate(rows), [rows]);
   const dayItems = selectedDate ? itemsByDate[selectedDate] || [] : [];
@@ -169,9 +169,10 @@ export default function AdminSchedules() {
       <Alert message={message} type="success" />
       <div className="toolbar calendar-toolbar">
         <input type="month" value={month} onChange={(event) => setMonth(event.target.value)} />
-        <select value={userId} onChange={(event) => setUserId(event.target.value)}>
+        <select value={position} onChange={(event) => setPosition(event.target.value)}>
           <option value="">Tất cả nhân viên</option>
-          {users.map((user) => <option key={user._id} value={user._id}>{user.name}</option>)}
+          <option value="warehouse">Nhân viên kho</option>
+          <option value="sale">Nhân viên sale</option>
         </select>
         <select value={shift} onChange={(event) => setShift(event.target.value)}>
           <option value="">Tất cả ca</option>

@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true },
     role: { type: String, enum: ["admin", "user"], default: "user" },
+    position: { type: String, enum: ["warehouse", "sale"], default: "warehouse" },
     hourlyRate: { type: Number, default: 30000 },
     active: { type: Boolean, default: true },
   },

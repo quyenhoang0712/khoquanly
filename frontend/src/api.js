@@ -74,6 +74,9 @@ export const api = {
   async createAdminUser(payload) {
     return parseResponse(await request(`${API_BASE_URL}/admin/users`, jsonOptions("POST", payload)));
   },
+  async updateAdminUser(id, payload) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/users/${id}`, jsonOptions("PUT", payload)));
+  },
   async deleteAdminUser(id) {
     return parseResponse(await request(`${API_BASE_URL}/admin/users/${id}`, { method: "DELETE" }));
   },
@@ -95,12 +98,6 @@ export const api = {
   async reviewScheduleRequest(id, action, adminNote = "") {
     return parseResponse(await request(`${API_BASE_URL}/admin/schedule-requests/${id}/${action}`, jsonOptions("PUT", { adminNote })));
   },
-  async getAdminLeaveRequests(params) {
-    return parseResponse(await request(`${API_BASE_URL}/admin/leave-requests${query(params)}`));
-  },
-  async reviewLeaveRequest(id, action, adminNote = "") {
-    return parseResponse(await request(`${API_BASE_URL}/admin/leave-requests/${id}/${action}`, jsonOptions("PUT", { adminNote })));
-  },
   async createAdminTask(payload) {
     return parseResponse(await request(`${API_BASE_URL}/admin/tasks`, jsonOptions("POST", payload)));
   },
@@ -116,11 +113,26 @@ export const api = {
   async getAdminReports(params) {
     return parseResponse(await request(`${API_BASE_URL}/admin/reports${query(params)}`));
   },
+  async getAdminMonthlyReport(params) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/monthly-report${query(params)}`));
+  },
   async getAdminCheckouts(params) {
     return parseResponse(await request(`${API_BASE_URL}/admin/checkouts${query(params)}`));
   },
   async getAdminSalaries(params) {
     return parseResponse(await request(`${API_BASE_URL}/admin/salaries${query(params)}`));
+  },
+  async getAdminOvertime(params) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/overtime${query(params)}`));
+  },
+  async createAdminOvertime(payload) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/overtime`, jsonOptions("POST", payload)));
+  },
+  async updateAdminOvertime(id, payload) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/overtime/${id}`, jsonOptions("PUT", payload)));
+  },
+  async deleteAdminOvertime(id) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/overtime/${id}`, { method: "DELETE" }));
   },
   async getAdminSalaryDetail(userId, params) {
     return parseResponse(await request(`${API_BASE_URL}/admin/salaries/${userId}${query(params)}`));
@@ -137,9 +149,6 @@ export const api = {
   },
   async createScheduleRequest(payload) {
     return parseResponse(await request(`${API_BASE_URL}/user/schedule-requests`, jsonOptions("POST", payload)));
-  },
-  async createLeaveRequest(payload) {
-    return parseResponse(await request(`${API_BASE_URL}/user/leave-requests`, jsonOptions("POST", payload)));
   },
   async getTodayTasks(params) {
     return parseResponse(await request(`${API_BASE_URL}/user/today-tasks${query(params)}`));

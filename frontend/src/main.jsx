@@ -6,7 +6,8 @@ import AppLayout from "./components/AppLayout";
 import AdminCheckouts from "./pages/admin/AdminCheckouts";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminEmployees from "./pages/admin/AdminEmployees";
-import { AdminLeaveRequests, AdminScheduleRequests } from "./pages/admin/AdminRequests";
+import { AdminScheduleRequests } from "./pages/admin/AdminRequests";
+import AdminOvertime from "./pages/admin/AdminOvertime";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminSalaries from "./pages/admin/AdminSalaries";
 import AdminSchedules from "./pages/admin/AdminSchedules";
@@ -14,7 +15,6 @@ import AdminTasks from "./pages/admin/AdminTasks";
 import Login from "./pages/Login";
 import UserCheckout from "./pages/user/UserCheckout";
 import UserDashboard from "./pages/user/UserDashboard";
-import UserLeaveRequest from "./pages/user/UserLeaveRequest";
 import UserSalary from "./pages/user/UserSalary";
 import UserSchedule from "./pages/user/UserSchedule";
 import UserScheduleRequest from "./pages/user/UserScheduleRequest";
@@ -46,8 +46,8 @@ createRoot(document.getElementById("root")).render(
           <Route path="/admin/employees" element={<AdminEmployees />} />
           <Route path="/admin/schedules" element={<AdminSchedules />} />
           <Route path="/admin/schedule-requests" element={<AdminScheduleRequests />} />
-          <Route path="/admin/leave-requests" element={<AdminLeaveRequests />} />
           <Route path="/admin/tasks" element={<AdminTasks />} />
+          <Route path="/admin/overtime" element={<AdminOvertime />} />
           <Route path="/admin/checkouts" element={<AdminCheckouts />} />
           <Route path="/admin/reports" element={<AdminReports />} />
           <Route path="/admin/salaries" element={<AdminSalaries />} />
@@ -57,7 +57,6 @@ createRoot(document.getElementById("root")).render(
           <Route path="/user/dashboard" element={<UserDashboard />} />
           <Route path="/user/schedule" element={<UserSchedule />} />
           <Route path="/user/schedule-request" element={<UserScheduleRequest />} />
-          <Route path="/user/leave-request" element={<UserLeaveRequest />} />
           <Route path="/user/tasks" element={<UserTasks />} />
           <Route path="/user/checkout" element={<UserCheckout />} />
           <Route path="/user/salary" element={<UserSalary />} />

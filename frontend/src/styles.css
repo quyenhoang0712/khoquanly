@@ -1700,6 +1700,179 @@ tbody tr:hover {
   font-weight: 800;
 }
 
+.task-board-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.task-board-card {
+  padding: 22px;
+  border: 1px solid var(--slate-200);
+  border-radius: 18px;
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+}
+
+.task-board-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--slate-100);
+}
+
+.task-board-card span,
+.task-board-fields span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--slate-500);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.task-board-card strong {
+  color: var(--slate-800);
+  font-size: 18px;
+}
+
+.task-board-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding-top: 18px;
+}
+
+.task-board-fields p {
+  margin: 0;
+  color: var(--slate-700);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.task-board-field-wide {
+  grid-column: 1 / -1;
+}
+
+.task-board-empty {
+  grid-column: 1 / -1;
+  padding: 28px;
+  color: var(--slate-500);
+  font-weight: 800;
+  text-align: center;
+}
+
+.employee-card-grid {
+  margin-top: 18px;
+}
+
+.employee-card-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.employee-avatar {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  display: grid !important;
+  place-items: center;
+  margin: 0 !important;
+  border-radius: 16px;
+  color: var(--slate-900) !important;
+  background: var(--slate-100);
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  text-transform: uppercase;
+}
+
+.employee-card .task-board-fields strong {
+  overflow-wrap: anywhere;
+}
+
+.report-card .task-board-fields {
+  align-items: start;
+}
+
+.report-content {
+  grid-column: 1 / -1;
+}
+
+.report-content p {
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.035);
+}
+
+.report-card .image-list {
+  justify-content: flex-start;
+}
+
+.report-section {
+  margin-top: 24px;
+}
+
+.report-section-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.report-section-header span,
+.report-section-header small {
+  color: var(--slate-500);
+  font-weight: 800;
+}
+
+.report-section-header span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.report-section-header strong {
+  color: var(--slate-900);
+  font-size: 24px;
+}
+
+.report-mini-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.toolbar.date-filter {
+  width: fit-content;
+  margin-bottom: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  animation: none;
+}
+
+.toolbar.date-filter:hover {
+  transform: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.toolbar.date-filter input {
+  width: 190px;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
 .employee-picker {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1938,6 +2111,10 @@ tbody tr:hover {
 @media (max-width: 1024px) {
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .task-board-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -2180,6 +2357,32 @@ tbody tr:hover {
   .stats-grid {
     gap: 10px;
     margin-bottom: 14px;
+  }
+
+  .task-board-grid {
+    gap: 12px;
+  }
+
+  .task-board-card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .task-board-card-header,
+  .task-board-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .task-board-card-header {
+    flex-direction: column;
+  }
+
+  .task-board-card-header .row-actions {
+    width: 100%;
+  }
+
+  .task-board-card-header .row-actions .button {
+    flex: 1;
   }
 
   .stat-card {
@@ -2592,6 +2795,10 @@ body::before {
   text-transform: none;
 }
 
+.eyebrow {
+  display: none;
+}
+
 h1 {
   color: #111827;
   font-weight: 900;
@@ -2876,4 +3083,71 @@ tbody tr:hover {
   .mobile-card-table thead {
     display: none;
   }
+}
+
+.toolbar.date-filter,
+.toolbar.salary-toolbar,
+.toolbar.calendar-toolbar,
+.toolbar.compact-filter {
+  width: fit-content;
+  max-width: 100%;
+  justify-content: flex-start;
+  margin: 0 0 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  animation: none;
+}
+
+.toolbar.date-filter:hover,
+.toolbar.salary-toolbar:hover,
+.toolbar.calendar-toolbar:hover,
+.toolbar.compact-filter:hover {
+  transform: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.toolbar.date-filter input,
+.toolbar.compact-filter input,
+.toolbar.compact-filter select,
+.toolbar.calendar-toolbar input,
+.toolbar.calendar-toolbar select,
+.toolbar.salary-toolbar select,
+.toolbar.salary-toolbar input {
+  width: 190px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.toolbar.search-filter input {
+  width: min(360px, calc(100vw - 32px));
+}
+
+.toolbar.calendar-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.toolbar.salary-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.toolbar.salary-toolbar .inline-field {
+  min-width: 0;
+}
+
+.toolbar.salary-toolbar .inline-field span {
+  display: none;
 }

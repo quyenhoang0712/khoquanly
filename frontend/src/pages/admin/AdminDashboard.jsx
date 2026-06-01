@@ -1,4 +1,4 @@
-import { CalendarCheck, ClipboardList, FileText, Users } from "lucide-react";
+import { CalendarCheck, ClipboardList, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "../../api";
 import { Alert } from "../../components/DataState";
@@ -15,7 +15,6 @@ export default function AdminDashboard() {
   const stats = [
     ["Nhân viên", data?.employees, Users, "blue"],
     ["Phiếu lịch chờ duyệt", data?.pendingSchedules, CalendarCheck, "amber"],
-    ["Phiếu nghỉ chờ duyệt", data?.pendingLeaves, FileText, "amber"],
     ["Công việc hôm nay", data?.todayTasks, ClipboardList, "green"],
   ];
 
@@ -43,7 +42,7 @@ export default function AdminDashboard() {
       </div>
       <div className="panel form-panel">
         <h2>Luồng quản lý chính</h2>
-        <p className="muted">Duyệt lịch tuần, duyệt xin nghỉ, giao việc hằng ngày, xem báo cáo, checkout và tính lương tháng cho nhân viên.</p>
+        <p className="muted">Duyệt lịch tuần, giao việc hằng ngày, xem báo cáo, checkout và tính lương tháng cho nhân viên.</p>
       </div>
     </section>
   );

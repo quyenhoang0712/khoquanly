@@ -6,11 +6,11 @@ Web quản lý nhân sự/lịch làm việc cho Admin và Nhân viên, dùng Re
 
 - Đăng nhập và phân quyền `admin` / `user`
 - Admin tạo tài khoản nhân sự, nhân viên không tự đăng ký
-- Admin xem lịch nhân viên, duyệt đăng ký lịch tuần, duyệt xin nghỉ
+- Admin xem lịch nhân viên, duyệt đăng ký lịch tuần
 - Admin giao việc trong ngày, xem trạng thái công việc, báo cáo, ảnh báo cáo và checkout
 - Admin xem bảng lương theo tháng/năm, chi tiết từng ngày và export CSV
 - Nhân viên xem lịch của mình, xem hôm nay làm với ai
-- Nhân viên đăng ký lịch tuần, xin nghỉ, xem task, cập nhật trạng thái, gửi báo cáo kèm ảnh, checkout
+- Nhân viên đăng ký lịch tuần, xem task, cập nhật trạng thái, gửi báo cáo kèm ảnh, checkout
 - Tính lương: ca đã duyệt + có checkout, mỗi ca 4 giờ, 30.000 VNĐ/giờ
 
 ## Tài khoản
@@ -81,13 +81,15 @@ GET /api/admin/schedules
 GET /api/admin/schedule-requests
 PUT /api/admin/schedule-requests/:id/approve
 PUT /api/admin/schedule-requests/:id/reject
-GET /api/admin/leave-requests
-PUT /api/admin/leave-requests/:id/approve
-PUT /api/admin/leave-requests/:id/reject
 POST /api/admin/tasks
 GET /api/admin/tasks?date=
 GET /api/admin/reports?date=
+GET /api/admin/monthly-report?month=&year=
 GET /api/admin/checkouts?date=
+GET /api/admin/overtime?month=&year=
+POST /api/admin/overtime
+PUT /api/admin/overtime/:id
+DELETE /api/admin/overtime/:id
 GET /api/admin/salaries?month=&year=
 GET /api/admin/salaries/:userId?month=&year=
 ```
@@ -97,7 +99,6 @@ USER:
 ```text
 GET /api/user/my-schedule
 POST /api/user/schedule-requests
-POST /api/user/leave-requests
 GET /api/user/today-tasks
 GET /api/user/tasks/:id
 PUT /api/user/tasks/:id/status

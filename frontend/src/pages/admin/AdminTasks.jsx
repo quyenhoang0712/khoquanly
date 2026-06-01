@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { CheckCircle2, CircleDashed, ClipboardList, LoaderCircle } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../api";
-import { Alert, EmptyRow, StatusBadge } from "../../components/DataState";
+import { Alert, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
-import { assetUrl, formatDate, statusLabels, today } from "../../utils/workforce";
+import { assetUrl, formatDate, formatNumber, statusLabels, today } from "../../utils/workforce";
 
 export default function AdminTasks() {
   const [date, setDate] = useState(today());
@@ -15,6 +16,24 @@ export default function AdminTasks() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
+
+  const summary = useMemo(() => {
+    const statuses = rows.flatMap((row) => row.statusByUser?.map((item) => item.status || "not-started") || ["not-started"]);
+
+    return {
+      total: statuses.length,
+      notStarted: statuses.filter((status) => status === "not-started").length,
+      inProgress: statuses.filter((status) => status === "in-progress").length,
+      completed: statuses.filter((status) => status === "completed").length,
+    };
+  }, [rows]);
+
+  const stats = [
+    ["Tổng việc", summary.total, ClipboardList, "blue"],
+    ["Chưa làm", summary.notStarted, CircleDashed, "slate"],
+    ["Đang làm", summary.inProgress, LoaderCircle, "amber"],
+    ["Đã xong", summary.completed, CheckCircle2, "green"],
+  ];
 
   const loadTasks = async () => {
     try {
@@ -57,7 +76,17 @@ export default function AdminTasks() {
 
   useEffect(() => {
     loadTasks();
+    const interval = window.setInterval(loadTasks, 5000);
+    return () => window.clearInterval(interval);
   }, [date]);
+
+  useEffect(() => {
+    if (!detail?.task?._id) return undefined;
+    const interval = window.setInterval(() => {
+      api.getAdminTask(detail.task._id).then(setDetail).catch((err) => setError(err.message));
+    }, 5000);
+    return () => window.clearInterval(interval);
+  }, [detail?.task?._id]);
 
   const toggleUser = (userId) => {
     setForm((current) => ({
@@ -104,50 +133,69 @@ export default function AdminTasks() {
       <Alert message={error} />
       <Alert message={message} type="success" />
 
-      <div className="toolbar">
+      <div className="stats-grid">
+        {stats.map(([label, value, Icon, tone]) => (
+          <article className="stat-card" key={label}>
+            <div className={`stat-icon ${tone}`}>
+              <Icon size={22} />
+            </div>
+            <div>
+              <span>{label}</span>
+              <strong>{formatNumber(value || 0)}</strong>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div className="toolbar date-filter">
         <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
       </div>
 
-      <div className="panel table-wrap mobile-card-table">
-        <table>
-          <thead>
-            <tr>
-              <th>Ngày</th>
-              <th>Tiêu đề</th>
-              <th>Nhân viên</th>
-              <th>Trạng thái</th>
-              <th>Mô tả</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 && <EmptyRow colSpan={6} />}
-            {rows.map((row) => (
-              <tr key={row._id}>
-                <td data-label="Ngày">{formatDate(row.date)}</td>
-                <td data-label="Tiêu đề">{row.title || "-"}</td>
-                <td data-label="Nhân viên">{row.assignedTo?.map((user) => user?.name || user?.email || "Nhân viên").join(", ") || "-"}</td>
-                <td data-label="Trạng thái">
-                  <div className="status-stack">
-                    {(row.statusByUser || []).map((item, index) => (
-                      <span className="status-with-name" key={item._id || `${row._id}-${index}`}>
-                        {item.user?.name && <small>{item.user.name}</small>}
-                        <StatusBadge status={statusLabels[item.status] || item.status || "not-started"} />
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td data-label="Mô tả">{row.description || "-"}</td>
-                <td data-label="Thao tác">
-                  <div className="row-actions">
-                    <button className="button small ghost" type="button" onClick={() => openDetail(row._id)}>Xem</button>
-                    <button className="button small danger" type="button" onClick={() => deleteTask(row._id)}>Xoá</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="task-board-grid">
+        {rows.length === 0 && (
+          <div className="panel task-board-empty">
+            Không có dữ liệu.
+          </div>
+        )}
+        {rows.map((row) => (
+          <article className="task-board-card" key={row._id}>
+            <div className="task-board-card-header">
+              <div>
+                <span>Ngày</span>
+                <strong>{formatDate(row.date)}</strong>
+              </div>
+              <div className="row-actions">
+                <button className="button small ghost" type="button" onClick={() => openDetail(row._id)}>Xem</button>
+                <button className="button small danger" type="button" onClick={() => deleteTask(row._id)}>Xoá</button>
+              </div>
+            </div>
+
+            <div className="task-board-fields">
+              <div>
+                <span>Tiêu đề</span>
+                <strong>{row.title || "-"}</strong>
+              </div>
+              <div>
+                <span>Nhân viên</span>
+                <strong>{row.assignedTo?.map((user) => user?.name || user?.email || "Nhân viên").join(", ") || "-"}</strong>
+              </div>
+              <div>
+                <span>Trạng thái</span>
+                <div className="status-stack">
+                  {(row.statusByUser || []).map((item, index) => (
+                    <span className="status-with-name" key={item._id || `${row._id}-${index}`}>
+                      <StatusBadge status={statusLabels[item.status] || item.status || "not-started"} />
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <span>Mô tả</span>
+                <p>{row.description || "-"}</p>
+              </div>
+            </div>
+          </article>
+        ))}
       </div>
 
       {open && (

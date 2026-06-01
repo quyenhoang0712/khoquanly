@@ -46,8 +46,36 @@ export default function UserSalary() {
       <div className="stats-grid">
         <article className="stat-card"><div><span>Số ca đã làm</span><strong>{formatNumber(salary?.totalShifts || 0)}</strong></div></article>
         <article className="stat-card"><div><span>Tổng giờ</span><strong>{formatNumber(salary?.totalHours || 0)}</strong></div></article>
+        <article className="stat-card"><div><span>Tăng ca</span><strong>{formatNumber(salary?.overtimeHours || 0)} giờ</strong></div></article>
         <article className="stat-card"><div><span>Tổng lương</span><strong>{formatCurrency(salary?.totalSalary || 0)}</strong></div></article>
       </div>
+
+      {salary?.overtimeRecords?.length > 0 && (
+        <div className="panel table-wrap salary-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Tăng ca</th>
+                <th>Giờ</th>
+                <th>Đơn giá</th>
+                <th>Tiền tăng ca</th>
+                <th>Ghi chú</th>
+              </tr>
+            </thead>
+            <tbody>
+              {salary.overtimeRecords.map((item) => (
+                <tr key={item._id}>
+                  <td data-label="Tăng ca">Tháng {item.month}/{item.year}</td>
+                  <td data-label="Giờ">{formatNumber(item.hours)}</td>
+                  <td data-label="Đơn giá">{formatCurrency(item.hourlyRate)}</td>
+                  <td data-label="Tiền tăng ca">{formatCurrency(item.amount)}</td>
+                  <td data-label="Ghi chú">{item.note || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div className="panel table-wrap salary-table">
         <table>

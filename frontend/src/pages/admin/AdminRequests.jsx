@@ -1,35 +1,34 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api";
-import { Alert, EmptyRow, StatusBadge } from "../../components/DataState";
+import { Alert, StatusBadge } from "../../components/DataState";
 import { formatDate, shiftLabels, statusLabels } from "../../utils/workforce";
 
+const positionLabels = {
+  warehouse: "Nhân viên kho",
+  sale: "Nhân viên sale",
+};
+
 export function AdminScheduleRequests() {
-  return <RequestPage type="schedule" title="Duyệt đăng ký lịch tuần" />;
+  return <RequestPage title="Duyệt đăng ký lịch tuần" />;
 }
 
-export function AdminLeaveRequests() {
-  return <RequestPage type="leave" title="Duyệt phiếu xin nghỉ" />;
-}
-
-function RequestPage({ type, title }) {
-  const [status, setStatus] = useState("pending");
+function RequestPage({ title }) {
+  const [position, setPosition] = useState("");
   const [rows, setRows] = useState([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
   const load = () => {
-    const getter = type === "schedule" ? api.getAdminScheduleRequests : api.getAdminLeaveRequests;
-    getter({ status }).then(setRows).catch((err) => setError(err.message));
+    api.getAdminScheduleRequests({ status: "pending", position }).then(setRows).catch((err) => setError(err.message));
   };
 
-  useEffect(load, [status, type]);
+  useEffect(load, [position]);
 
   const review = async (id, action) => {
     try {
       setError("");
       setMessage("");
-      const fn = type === "schedule" ? api.reviewScheduleRequest : api.reviewLeaveRequest;
-      await fn(id, action);
+      await api.reviewScheduleRequest(id, action);
       setMessage("Đã ghi nhận.");
       load();
     } catch (err) {
@@ -38,8 +37,6 @@ function RequestPage({ type, title }) {
   };
 
   const renderRequestInfo = (row) => {
-    if (type !== "schedule") return `${formatDate(row.date)} - ${shiftLabels[row.shift]}`;
-
     return (
       <div className="schedule-request-info">
         <strong>Tuần {formatDate(row.weekStart)}</strong>
@@ -58,23 +55,47 @@ function RequestPage({ type, title }) {
     <section className="page">
       <div className="page-header"><div><p className="eyebrow">Phê duyệt</p><h1>{title}</h1></div></div>
       <Alert message={error} /><Alert message={message} type="success" />
-      <div className="toolbar"><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></div>
-      <div className="panel table-wrap mobile-card-table">
-        <table>
-          <thead><tr><th>Nhân viên</th><th>Thông tin</th><th>Ghi chú/Lý do</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
-          <tbody>
-            {rows.length === 0 && <EmptyRow colSpan={5} />}
-            {rows.map((row) => (
-              <tr key={row._id}>
-                <td data-label="Nhân viên">{row.user?.name}</td>
-                <td data-label="Thông tin">{renderRequestInfo(row)}</td>
-                <td data-label="Ghi chú/Lý do">{row.note || row.reason || "-"}</td>
-                <td data-label="Trạng thái"><StatusBadge status={statusLabels[row.status] || row.status} /></td>
-                <td data-label="Thao tác"><div className="row-actions"><button className="button small primary" onClick={() => review(row._id, "approve")}>Duyệt</button><button className="button small ghost" onClick={() => review(row._id, "reject")}>Từ chối</button></div></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="toolbar compact-filter">
+        <select value={position} onChange={(event) => setPosition(event.target.value)}>
+          <option value="">Tất cả chức vụ</option>
+          <option value="warehouse">Nhân viên kho</option>
+          <option value="sale">Nhân viên sale</option>
+        </select>
+      </div>
+      {rows.length === 0 && <div className="panel task-board-empty">Không có dữ liệu.</div>}
+      <div className="task-board-grid">
+        {rows.map((row) => (
+          <article className="task-board-card" key={row._id}>
+            <div className="task-board-card-header">
+              <div>
+                <span>Nhân viên</span>
+                <strong>{row.user?.name || "Nhân viên"}</strong>
+              </div>
+              <StatusBadge status={statusLabels[row.status] || row.status} />
+            </div>
+            <div className="task-board-fields">
+              <div>
+                <span>Chức vụ</span>
+                <p>{positionLabels[row.user?.position || "warehouse"]}</p>
+              </div>
+              <div>
+                <span>Ghi chú/Lý do</span>
+                <p>{row.note || row.reason || "-"}</p>
+              </div>
+              <div className="task-board-field-wide">
+                <span>Thông tin</span>
+                {renderRequestInfo(row)}
+              </div>
+              <div className="task-board-field-wide">
+                <span>Thao tác</span>
+                <div className="row-actions">
+                  <button className="button small primary" onClick={() => review(row._id, "approve")}>Duyệt</button>
+                  <button className="button small ghost" onClick={() => review(row._id, "reject")}>Từ chối</button>
+                </div>
+              </div>
+            </div>
+          </article>
+        ))}
       </div>
     </section>
   );

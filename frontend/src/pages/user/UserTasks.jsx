@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { api } from "../../api";
-import { Alert, EmptyRow, StatusBadge } from "../../components/DataState";
+import { api, authStorage } from "../../api";
+import { Alert, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
 import { formatDate, statusLabels, today } from "../../utils/workforce";
 
 export default function UserTasks() {
+  const currentUser = authStorage.getUser();
   const [date, setDate] = useState(today());
   const [rows, setRows] = useState([]);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -24,11 +25,26 @@ export default function UserTasks() {
 
   useEffect(load, [date]);
 
-  const getStatus = (task) => task.statusByUser?.[0]?.status || "not-started";
+  const getUserId = (value) => String(value?._id || value?.id || value || "");
+  const getStatus = (task) => {
+    if (task.currentStatus) return task.currentStatus;
+    const currentStatus = task.statusByUser?.find((item) => getUserId(item.user) === getUserId(currentUser));
+    return currentStatus?.status || "not-started";
+  };
+
+  const replaceTask = (updatedTask) => {
+    setRows((currentRows) => currentRows.map((row) => (row._id === updatedTask._id ? updatedTask : row)));
+  };
+
+  const taskWithStatus = (task, nextStatus) => ({
+    ...task,
+    currentStatus: nextStatus,
+  });
 
   const openTask = (task) => {
     setSelectedTask(task);
-    setStatus(getStatus(task));
+    const taskStatus = getStatus(task);
+    setStatus(taskStatus === "completed" ? "completed" : "in-progress");
     setContent("");
     setFiles([]);
     setError("");
@@ -44,9 +60,11 @@ export default function UserTasks() {
       setError("");
       setMessage("");
       const data = await api.updateTaskStatus(selectedTask._id, status);
-      setSelectedTask(data);
+      const updatedTask = taskWithStatus(data, status);
+      setSelectedTask(updatedTask);
+      replaceTask(updatedTask);
       setMessage("Đã ghi nhận.");
-      load();
+      setSelectedTask(null);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -69,12 +87,13 @@ export default function UserTasks() {
       formData.append("content", content);
       files.forEach((file) => formData.append("images", file));
       await api.submitTaskReport(selectedTask._id, formData);
-      if (status !== "completed") await api.updateTaskStatus(selectedTask._id, "completed");
+      const data = await api.updateTaskStatus(selectedTask._id, status);
+      const updatedTask = taskWithStatus(data, status);
+      replaceTask(updatedTask);
       setMessage("Đã ghi nhận.");
-      setStatus("completed");
       setContent("");
       setFiles([]);
-      load();
+      setSelectedTask(null);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -93,33 +112,37 @@ export default function UserTasks() {
       </div>
       <Alert message={error} />
       <Alert message={message} type="success" />
-      <div className="toolbar">
+      <div className="toolbar date-filter">
         <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
       </div>
-      <div className="panel table-wrap mobile-card-table">
-        <table>
-          <thead>
-            <tr>
-              <th>Ngày</th>
-              <th>Công việc</th>
-              <th>Mô tả ngắn</th>
-              <th>Trạng thái</th>
-              <th>Chi tiết</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 && <EmptyRow colSpan={5} />}
-            {rows.map((row) => (
-              <tr key={row._id}>
-                <td data-label="Ngày">{formatDate(row.date)}</td>
-                <td data-label="Công việc">{row.title}</td>
-                <td data-label="Mô tả">{row.description || "-"}</td>
-                <td data-label="Trạng thái"><StatusBadge status={statusLabels[getStatus(row)] || getStatus(row)} /></td>
-                <td data-label="Chi tiết"><button className="button small ghost" type="button" onClick={() => openTask(row)}>Xem việc</button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="task-board-grid">
+        {rows.length === 0 && <div className="panel task-board-empty">Không có dữ liệu.</div>}
+        {rows.map((row) => (
+          <article className="task-board-card" key={row._id}>
+            <div className="task-board-card-header">
+              <div>
+                <span>Ngày</span>
+                <strong>{formatDate(row.date)}</strong>
+              </div>
+              <button className="button small ghost" type="button" onClick={() => openTask(row)}>Xem việc</button>
+            </div>
+
+            <div className="task-board-fields">
+              <div>
+                <span>Công việc</span>
+                <strong>{row.title}</strong>
+              </div>
+              <div>
+                <span>Trạng thái</span>
+                <StatusBadge status={statusLabels[getStatus(row)] || getStatus(row)} />
+              </div>
+              <div>
+                <span>Mô tả</span>
+                <p>{row.description || "-"}</p>
+              </div>
+            </div>
+          </article>
+        ))}
       </div>
 
       {selectedTask && (
@@ -138,7 +161,6 @@ export default function UserTasks() {
           <label className="field">
             <span>Cập nhật trạng thái</span>
             <select value={status} onChange={(event) => setStatus(event.target.value)}>
-              <option value="not-started">Chưa làm</option>
               <option value="in-progress">Đang làm</option>
               <option value="completed">Đã xong</option>
             </select>

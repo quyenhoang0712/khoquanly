@@ -2,12 +2,10 @@ const express = require("express");
 const multer = require("multer");
 const CheckoutLog = require("../models/CheckoutLog");
 const DailyTask = require("../models/DailyTask");
-const LeaveRequest = require("../models/LeaveRequest");
 const ReportImage = require("../models/ReportImage");
 const TaskReport = require("../models/TaskReport");
 const WeeklyScheduleRequest = require("../models/WeeklyScheduleRequest");
 const WorkSchedule = require("../models/WorkSchedule");
-const { autoCheckoutPastSchedules } = require("../utils/checkout");
 const { uploadImages } = require("../utils/cloudinary");
 const { calculateSalary } = require("../utils/salary");
 const { todayString } = require("../utils/date");
@@ -21,6 +19,15 @@ const upload = multer({
     cb(null, true);
   },
 });
+
+const serializeTaskForUser = (task, userId) => {
+  const data = task.toObject ? task.toObject() : task;
+  const currentStatus = data.statusByUser?.find((item) => String(item.user?._id || item.user) === userId);
+  return {
+    ...data,
+    currentStatus: currentStatus?.status || "not-started",
+  };
+};
 
 router.get("/my-schedule", async (req, res, next) => {
   try {
@@ -39,7 +46,6 @@ router.get("/my-schedule", async (req, res, next) => {
 
 router.get("/my-checkouts", async (req, res, next) => {
   try {
-    await autoCheckoutPastSchedules();
     const filters = { user: req.user.id };
     if (req.query.date) filters.date = req.query.date;
     if (req.query.month && req.query.year) {
@@ -95,22 +101,11 @@ router.post("/schedule-requests", async (req, res, next) => {
   }
 });
 
-router.post("/leave-requests", async (req, res, next) => {
-  try {
-    const { date, shift, reason } = req.body;
-    if (!date || !reason) return res.status(400).json({ message: "Date and reason are required" });
-    const request = await LeaveRequest.create({ user: req.user.id, date, shift, reason });
-    res.status(201).json(request);
-  } catch (error) {
-    next(error);
-  }
-});
-
 router.get("/today-tasks", async (req, res, next) => {
   try {
     const date = req.query.date || todayString();
     const tasks = await DailyTask.find({ date, assignedTo: req.user.id }).populate("assignedTo", "name email").sort({ createdAt: -1 });
-    res.json(tasks);
+    res.json(tasks.map((task) => serializeTaskForUser(task, req.user.id)));
   } catch (error) {
     next(error);
   }
@@ -120,7 +115,7 @@ router.get("/tasks/:id", async (req, res, next) => {
   try {
     const task = await DailyTask.findOne({ _id: req.params.id, assignedTo: req.user.id }).populate("assignedTo", "name email");
     if (!task) return res.status(404).json({ message: "Task not found" });
-    res.json(task);
+    res.json(serializeTaskForUser(task, req.user.id));
   } catch (error) {
     next(error);
   }
@@ -141,7 +136,7 @@ router.put("/tasks/:id/status", async (req, res, next) => {
       task.statusByUser.push({ user: req.user.id, status, updatedAt: new Date() });
     }
     await task.save();
-    res.json(task);
+    res.json(serializeTaskForUser(task, req.user.id));
   } catch (error) {
     next(error);
   }
@@ -188,7 +183,6 @@ router.post("/checkout", upload.array("images", 6), async (req, res, next) => {
 
 router.get("/my-salary", async (req, res, next) => {
   try {
-    await autoCheckoutPastSchedules();
     const [currentYear, currentMonth] = todayString().split("-").map(Number);
     const month = Number(req.query.month || currentMonth);
     const year = Number(req.query.year || currentYear);

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../api";
-import { Alert, EmptyRow, StatusBadge } from "../../components/DataState";
+import { Alert } from "../../components/DataState";
 import Modal from "../../components/Modal";
 import { formatCurrency } from "../../utils/workforce";
 
@@ -8,13 +8,20 @@ const initialForm = {
   name: "",
   email: "",
   password: "",
+  position: "warehouse",
   hourlyRate: 30000,
+};
+
+const positionLabels = {
+  warehouse: "Nhân viên kho",
+  sale: "Nhân viên sale",
 };
 
 export default function AdminEmployees() {
   const [rows, setRows] = useState([]);
   const [keyword, setKeyword] = useState("");
   const [open, setOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -38,7 +45,7 @@ export default function AdminEmployees() {
   const filteredRows = useMemo(() => {
     const value = keyword.trim().toLowerCase();
     if (!value) return rows;
-    return rows.filter((user) => `${user.name} ${user.email}`.toLowerCase().includes(value));
+    return rows.filter((user) => `${user.name} ${user.email} ${positionLabels[user.position || "warehouse"]}`.toLowerCase().includes(value));
   }, [keyword, rows]);
 
   const submit = async (event) => {
@@ -49,8 +56,15 @@ export default function AdminEmployees() {
       setLoading(true);
       setError("");
       setMessage("");
-      await api.createAdminUser(form);
+      if (editingUser) {
+        const payload = { ...form };
+        if (!payload.password) delete payload.password;
+        await api.updateAdminUser(editingUser._id, payload);
+      } else {
+        await api.createAdminUser(form);
+      }
       setOpen(false);
+      setEditingUser(null);
       setForm(initialForm);
       setMessage("Đã ghi nhận.");
       await loadUsers();
@@ -60,6 +74,28 @@ export default function AdminEmployees() {
       loadingRef.current = false;
       setLoading(false);
     }
+  };
+
+  const openCreate = () => {
+    setEditingUser(null);
+    setForm(initialForm);
+    setError("");
+    setMessage("");
+    setOpen(true);
+  };
+
+  const openEdit = (user) => {
+    setEditingUser(user);
+    setForm({
+      name: user.name || "",
+      email: user.email || "",
+      password: "",
+      position: user.position || "warehouse",
+      hourlyRate: user.hourlyRate || 30000,
+    });
+    setError("");
+    setMessage("");
+    setOpen(true);
   };
 
   const deleteUser = async (user) => {
@@ -82,7 +118,7 @@ export default function AdminEmployees() {
           <p className="eyebrow">Nhân sự</p>
           <h1>Quản lý nhân sự</h1>
         </div>
-        <button className="button primary" type="button" onClick={() => setOpen(true)}>
+        <button className="button primary" type="button" onClick={openCreate}>
           Tạo nhân sự
         </button>
       </div>
@@ -99,66 +135,67 @@ export default function AdminEmployees() {
           </div>
         </article>
         <article className="stat-card">
-          <div className="stat-icon green">OK</div>
+          <div className="stat-icon green">K</div>
           <div>
-            <span>Đang hoạt động</span>
-            <strong>{rows.filter((user) => user.active).length}</strong>
+            <span>Nhân viên kho</span>
+            <strong>{rows.filter((user) => (user.position || "warehouse") === "warehouse").length}</strong>
           </div>
         </article>
         <article className="stat-card">
-          <div className="stat-icon amber">₫</div>
+          <div className="stat-icon amber">S</div>
           <div>
-            <span>Lương giờ mặc định</span>
-            <strong>{formatCurrency(30000)}</strong>
+            <span>Nhân viên sale</span>
+            <strong>{rows.filter((user) => user.position === "sale").length}</strong>
           </div>
         </article>
       </div>
 
-      <div className="toolbar">
+      <div className="toolbar compact-filter search-filter">
         <input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Tìm theo tên hoặc email..." />
       </div>
 
-      <div className="panel table-wrap mobile-card-table">
-        <table>
-          <thead>
-            <tr>
-              <th>Nhân viên</th>
-              <th>Email</th>
-              <th>Vai trò</th>
-              <th>Lương giờ</th>
-              <th>Trạng thái</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRows.length === 0 && <EmptyRow colSpan={6}>Chưa có nhân sự.</EmptyRow>}
-            {filteredRows.map((user) => (
-              <tr key={user._id}>
-                <td data-label="Nhân viên">
-                  <div className="employee-cell">
-                    <span>{user.name?.slice(0, 1)?.toUpperCase() || "N"}</span>
-                    <strong>{user.name}</strong>
-                  </div>
-                </td>
-                <td data-label="Email">{user.email}</td>
-                <td data-label="Vai trò">Nhân viên</td>
-                <td data-label="Lương giờ">{formatCurrency(user.hourlyRate)}</td>
-                <td data-label="Trạng thái">
-                  <StatusBadge status={user.active ? "approved" : "rejected"} />
-                </td>
-                <td data-label="Thao tác">
-                  <button className="button small danger" type="button" onClick={() => deleteUser(user)}>
-                    Xoá
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="task-board-grid employee-card-grid">
+        {filteredRows.length === 0 && <div className="panel task-board-empty">Chưa có nhân sự.</div>}
+        {filteredRows.map((user) => (
+          <article className="task-board-card employee-card" key={user._id}>
+            <div className="task-board-card-header">
+              <div className="employee-card-title">
+                <span className="employee-avatar">{user.name?.slice(0, 1)?.toUpperCase() || "N"}</span>
+                <div>
+                  <span>Nhân viên</span>
+                  <strong>{user.name}</strong>
+                </div>
+              </div>
+              <div className="row-actions">
+                <button className="button small ghost" type="button" onClick={() => openEdit(user)}>
+                  Sửa
+                </button>
+                <button className="button small danger" type="button" onClick={() => deleteUser(user)}>
+                  Xoá
+                </button>
+              </div>
+            </div>
+
+            <div className="task-board-fields">
+              <div>
+                <span>Email</span>
+                <strong>{user.email}</strong>
+              </div>
+              <div>
+                <span>Chức vụ</span>
+                <strong>{positionLabels[user.position || "warehouse"]}</strong>
+              </div>
+              <div>
+                <span>Lương giờ</span>
+                <strong>{formatCurrency(user.hourlyRate)}</strong>
+              </div>
+            </div>
+          </article>
+        ))}
       </div>
 
       {open && (
-        <Modal title="Tạo nhân sự" onClose={() => setOpen(false)}>
+        <Modal title={editingUser ? "Sửa nhân sự" : "Tạo nhân sự"} onClose={() => setOpen(false)}>
           <form className="product-form compact-form" onSubmit={submit}>
             <label className="field">
               <span>Họ tên</span>
@@ -175,14 +212,21 @@ export default function AdminEmployees() {
               />
             </label>
             <label className="field">
-              <span>Mật khẩu</span>
+              <span>Chức vụ</span>
+              <select value={form.position} onChange={(event) => setForm({ ...form, position: event.target.value })}>
+                <option value="warehouse">Nhân viên kho</option>
+                <option value="sale">Nhân viên sale</option>
+              </select>
+            </label>
+            <label className="field">
+              <span>{editingUser ? "Mật khẩu mới" : "Mật khẩu"}</span>
               <input
                 type="password"
                 minLength={6}
                 value={form.password}
                 onChange={(event) => setForm({ ...form, password: event.target.value })}
-                placeholder="Tối thiểu 6 ký tự"
-                required
+                placeholder={editingUser ? "Bỏ trống nếu không đổi" : "Tối thiểu 6 ký tự"}
+                required={!editingUser}
               />
             </label>
             <label className="field">
@@ -197,7 +241,7 @@ export default function AdminEmployees() {
               />
             </label>
             <button className="button primary" disabled={loading}>
-              {loading ? "Đang tạo..." : "Tạo nhân sự"}
+              {loading ? "Đang lưu..." : editingUser ? "Lưu thay đổi" : "Tạo nhân sự"}
             </button>
           </form>
         </Modal>

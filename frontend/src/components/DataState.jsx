@@ -44,7 +44,7 @@ export function StatusBadge({ status }) {
     leave: "Nghỉ",
     "not-started": "Chưa làm",
     "in-progress": "Đang làm",
-    completed: "Completed",
+    completed: "Đã xong",
   }[status] || status;
   const tone = {
     pending: "warning",
@@ -61,6 +61,7 @@ export function StatusBadge({ status }) {
     "Đang làm": "info",
     completed: "success",
     Completed: "success",
+    "Đã xong": "success",
   }[status];
 
   return <span className={`badge ${tone || "muted"}`}>{display}</span>;
