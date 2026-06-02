@@ -3,6 +3,7 @@ const CheckoutLog = require("../models/CheckoutLog");
 const OvertimeRecord = require("../models/OvertimeRecord");
 const User = require("../models/User");
 const { salaryPeriodRange } = require("./date");
+const { shiftHours } = require("./shifts");
 
 const HOURS_PER_SHIFT = 4;
 const HOURLY_RATE = 30000;
@@ -11,7 +12,7 @@ const calculateSalary = async (userId, month, year) => {
   const { start, end } = salaryPeriodRange(month, year);
 
   const [user, schedules, checkouts, overtimeRecords] = await Promise.all([
-    User.findById(userId).select("hourlyRate").lean(),
+    User.findById(userId).select("hourlyRate position").lean(),
     WorkSchedule.find({
       user: userId,
       status: "scheduled",
@@ -39,8 +40,7 @@ const calculateSalary = async (userId, month, year) => {
   const details = Array.from(grouped.values())
     .sort((a, b) => a.date.localeCompare(b.date))
     .map((item) => {
-      const shiftCount = Number(item.morning) + Number(item.afternoon);
-      const hours = shiftCount * HOURS_PER_SHIFT;
+      const hours = (item.morning ? shiftHours(user?.position, "morning") : 0) + (item.afternoon ? shiftHours(user?.position, "afternoon") : 0);
       return {
         ...item,
         hours,
@@ -49,7 +49,7 @@ const calculateSalary = async (userId, month, year) => {
     });
 
   const totalShifts = details.reduce((sum, item) => sum + Number(item.morning) + Number(item.afternoon), 0);
-  const regularHours = totalShifts * HOURS_PER_SHIFT;
+  const regularHours = details.reduce((sum, item) => sum + Number(item.hours || 0), 0);
   const regularSalary = regularHours * hourlyRate;
   const overtimeHours = overtimeRecords.reduce((sum, item) => sum + Number(item.hours || 0), 0);
   const overtimeSalary = overtimeRecords.reduce((sum, item) => sum + Number(item.amount || 0), 0);

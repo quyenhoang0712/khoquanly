@@ -19,21 +19,25 @@ const adminItems = [
   { to: "/admin/dashboard", label: "Dashboard", icon: BarChart3 },
   { to: "/admin/employees", label: "Nhân sự", icon: Users },
   { to: "/admin/schedules", label: "Lịch nhân viên", icon: CalendarDays },
-  { to: "/admin/schedule-requests", label: "Duyệt lịch tuần", icon: ClipboardCheck },
+  { to: "/admin/schedule-requests", label: "Duyệt ngày làm", icon: ClipboardCheck },
   { to: "/admin/tasks", label: "Giao việc", icon: ClipboardCheck },
+  { to: "/admin/service-expenses", label: "Chi phí dịch vụ", icon: ReceiptText },
   { to: "/admin/overtime", label: "Tăng ca", icon: Clock3 },
   { to: "/admin/checkouts", label: "Checkout", icon: Clock },
   { to: "/admin/reports", label: "Báo cáo", icon: FileText },
   { to: "/admin/salaries", label: "Bảng lương", icon: ReceiptText },
+  { to: "/admin/rules", label: "Nội quy", icon: FileText },
 ];
 
 const userItems = [
   { to: "/user/dashboard", label: "Dashboard", icon: BarChart3 },
   { to: "/user/schedule", label: "Lịch của tôi", icon: CalendarDays },
-  { to: "/user/schedule-request", label: "Đăng ký lịch", icon: ClipboardCheck },
+  { to: "/user/schedule-request", label: "Đăng ký ngày làm", icon: ClipboardCheck },
   { to: "/user/tasks", label: "Việc hôm nay", icon: ClipboardCheck },
+  { to: "/user/service-expenses", label: " Phí dịch vụ", icon: ReceiptText },
   { to: "/user/checkout", label: "Checkout", icon: Clock },
   { to: "/user/salary", label: "Lương của tôi", icon: ReceiptText },
+  { to: "/user/rules", label: "Nội quy", icon: FileText },
 ];
 
 export default function AppLayout() {
@@ -47,9 +51,24 @@ export default function AppLayout() {
     navigate("/login", { replace: true });
   };
 
+  const resetApp = () => {
+    const dashboardPath = user?.role === "admin" ? "/admin/dashboard" : "/user/dashboard";
+    setOpen(false);
+    window.location.assign(dashboardPath);
+  };
+
   return (
     <div className="app-shell">
       <aside className={`sidebar ${open ? "is-open" : ""}`}>
+        <button className="sidebar-brand" type="button" onClick={resetApp} aria-label="Reset về dashboard">
+          <div className="sidebar-brand-mark">
+            <BarChart3 size={22} />
+          </div>
+          <div>
+            <strong>138Knitwear</strong>
+            <span>{user?.role === "admin" ? "138C Quản lý" : "Nhân viên"}</span>
+          </div>
+        </button>
         <nav className="nav-list">
           {navItems.map((item) => {
             const Icon = item.icon;

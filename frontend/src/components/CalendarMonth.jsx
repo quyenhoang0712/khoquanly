@@ -1,4 +1,4 @@
-import { formatDate, shiftLabels, today as todayString } from "../utils/workforce";
+import { formatDate, shiftLabels, shiftTimeLabel, today as todayString } from "../utils/workforce";
 
 const weekDays = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 
@@ -25,7 +25,7 @@ const buildDays = (monthValue) => {
   return cells;
 };
 
-export default function CalendarMonth({ month, itemsByDate, onDayClick, renderMeta, compact = false }) {
+export default function CalendarMonth({ month, itemsByDate, onDayClick, renderMeta, compact = false, position = "warehouse" }) {
   const days = buildDays(month);
   const today = todayString();
 
@@ -58,7 +58,7 @@ export default function CalendarMonth({ month, itemsByDate, onDayClick, renderMe
                     {!compact &&
                       items.slice(0, 3).map((item) => (
                         <span key={item._id || `${item.shift}-${item.user?._id || item.date}`} className={`calendar-event ${item.status === "leave" ? "leave" : item.shift}`}>
-                          {item.status === "leave" ? "Nghỉ" : item.shift === "morning" ? "Sáng 09:00 - 13:00" : "Chiều 13:00 - 17:00"}
+                          {item.status === "leave" ? "Nghỉ" : `${item.shift === "morning" ? "Sáng" : "Chiều"} ${shiftTimeLabel(position, item.shift)}`}
                         </span>
                       ))}
                     {!compact && items.length > 3 && <span className="calendar-more">+{items.length - 3} ca</span>}

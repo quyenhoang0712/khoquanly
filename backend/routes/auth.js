@@ -13,6 +13,7 @@ const signUser = (user) =>
       email: user.email,
       name: user.name,
       role: user.role,
+      position: user.position,
     },
     JWT_SECRET,
     { expiresIn: "30d" }
@@ -23,6 +24,7 @@ const publicUser = (user) => ({
   email: user.email,
   name: user.name,
   role: user.role,
+  position: user.position,
 });
 
 router.post("/login", async (req, res, next) => {

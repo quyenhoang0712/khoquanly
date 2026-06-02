@@ -21,6 +21,17 @@ const todayString = (date = new Date()) => {
   return `${parts.year}-${parts.month}-${parts.day}`;
 };
 
+const weekdayInAppTimeZone = (date = new Date()) =>
+  new Intl.DateTimeFormat("en-US", {
+    timeZone: APP_TIME_ZONE,
+    weekday: "short",
+  }).format(date);
+
+const isWeekendInAppTimeZone = (date = new Date()) => {
+  const weekday = weekdayInAppTimeZone(date);
+  return weekday === "Sat" || weekday === "Sun";
+};
+
 const dateTimeInAppTimeZone = (date, time = "00:00:00") => new Date(`${date}T${time}+07:00`);
 
 const monthRange = (month, year) => {
@@ -41,4 +52,4 @@ const salaryPeriodRange = (month, year) => {
   };
 };
 
-module.exports = { APP_TIME_ZONE, todayString, dateTimeInAppTimeZone, monthRange, salaryPeriodRange };
+module.exports = { APP_TIME_ZONE, todayString, isWeekendInAppTimeZone, dateTimeInAppTimeZone, monthRange, salaryPeriodRange };

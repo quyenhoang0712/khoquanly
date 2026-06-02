@@ -3,16 +3,19 @@ const CheckoutLog = require("../models/CheckoutLog");
 const DailyTask = require("../models/DailyTask");
 const OvertimeRecord = require("../models/OvertimeRecord");
 const ReportImage = require("../models/ReportImage");
+const SalaryRecord = require("../models/SalaryRecord");
+const ServiceExpense = require("../models/ServiceExpense");
 const TaskReport = require("../models/TaskReport");
 const User = require("../models/User");
 const WeeklyScheduleRequest = require("../models/WeeklyScheduleRequest");
 const WorkSchedule = require("../models/WorkSchedule");
+const WorkRule = require("../models/WorkRule");
 const { calculateSalary } = require("../utils/salary");
 const { todayString } = require("../utils/date");
 
 const router = express.Router();
 
-const populateUser = { path: "user", select: "name email role position" };
+const populateUser = { path: "user", select: "name email role position active" };
 const populateAssigned = { path: "assignedTo", select: "name email" };
 
 const requestOrigin = (req) => {
@@ -45,6 +48,30 @@ const calendarMonthRange = (month, year) => {
   };
 };
 
+const addDays = (dateString, days) => {
+  const date = new Date(`${dateString}T00:00:00+07:00`);
+  date.setDate(date.getDate() + days);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+};
+
+const weekRange = (dateString) => {
+  const date = new Date(`${dateString}T00:00:00+07:00`);
+  const day = date.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  return {
+    start: addDays(dateString, mondayOffset),
+    end: addDays(dateString, mondayOffset + 6),
+  };
+};
+
+const dateRangeFilter = ({ mode, date }) => {
+  if (mode === "week") {
+    const range = weekRange(date);
+    return { range, filter: { $gte: range.start, $lte: range.end } };
+  }
+  return { range: { start: date, end: date }, filter: date };
+};
+
 const applyDateFilters = (filters, query) => {
   if (query.date) {
     filters.date = query.date;
@@ -61,6 +88,134 @@ const shiftsFromOption = (shiftOption) => {
   if (shiftOption === "full") return ["morning", "afternoon"];
   if (["morning", "afternoon"].includes(shiftOption)) return [shiftOption];
   return [];
+};
+
+const schedulePositions = ["warehouse", "sale"];
+const scheduleShifts = ["morning", "afternoon"];
+const autoScheduleCapacity = {
+  warehouse: 2,
+  sale: 1,
+};
+
+const buildAutoSchedulePlan = async (weekStart) => {
+  if (!weekStart || !/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) {
+    const error = new Error("Vui lòng chọn tuần cần xếp lịch");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  await retireDuplicatePendingScheduleRequests();
+
+  const requests = await WeeklyScheduleRequest.find({ weekStart, status: "pending" })
+    .populate(populateUser)
+    .sort({ createdAt: 1 });
+
+  if (requests.length === 0) {
+    const error = new Error("Không có phiếu đăng ký đang chờ cho tuần này");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const assignedCounts = new Map();
+  const requestedCounts = new Map();
+  const assignments = [];
+  const existingAssignments = [];
+  const shortages = [];
+  const requestSummaries = new Map();
+  const existingBySlot = new Map();
+
+  const weekEnd = addDays(weekStart, 6);
+  const existingSchedules = await WorkSchedule.find({
+    date: { $gte: weekStart, $lte: weekEnd },
+    status: "scheduled",
+  }).populate(populateUser);
+
+  existingSchedules.forEach((schedule) => {
+    const position = schedule.user?.position || "warehouse";
+    const slotKey = `${schedule.date}-${schedule.shift}-${position}`;
+    existingBySlot.set(slotKey, (existingBySlot.get(slotKey) || 0) + 1);
+    existingAssignments.push({
+      user: schedule.user,
+      date: schedule.date,
+      shift: schedule.shift,
+      position,
+    });
+  });
+
+  requests.forEach((request) => {
+    const userId = String(request.user?._id || request.user);
+    assignedCounts.set(userId, 0);
+    requestedCounts.set(userId, request.shifts.length);
+    requestSummaries.set(String(request._id), {
+      requestId: request._id,
+      user: request.user,
+      requestedShifts: request.shifts.length,
+      assignedShifts: 0,
+    });
+  });
+
+  for (let dayIndex = 0; dayIndex < 7; dayIndex += 1) {
+    const date = addDays(weekStart, dayIndex);
+    for (const shift of scheduleShifts) {
+      for (const position of schedulePositions) {
+        const candidates = requests
+          .filter((request) => {
+            const userPosition = request.user?.position || "warehouse";
+            return userPosition === position && request.shifts.some((item) => item.date === date && item.shift === shift);
+          })
+          .sort((a, b) => {
+            const userA = String(a.user?._id || a.user);
+            const userB = String(b.user?._id || b.user);
+            const assignedDiff = (assignedCounts.get(userA) || 0) - (assignedCounts.get(userB) || 0);
+            if (assignedDiff !== 0) return assignedDiff;
+            const requestDiff = (requestedCounts.get(userA) || 0) - (requestedCounts.get(userB) || 0);
+            if (requestDiff !== 0) return requestDiff;
+            return String(a.user?.name || "").localeCompare(String(b.user?.name || ""), "vi");
+          });
+
+        const capacity = autoScheduleCapacity[position];
+        const existingCount = existingBySlot.get(`${date}-${shift}-${position}`) || 0;
+        const remainingCapacity = Math.max(capacity - existingCount, 0);
+        const selected = candidates.slice(0, remainingCapacity);
+
+        selected.forEach((request) => {
+          const userId = String(request.user?._id || request.user);
+          const requestId = String(request._id);
+          assignedCounts.set(userId, (assignedCounts.get(userId) || 0) + 1);
+          requestSummaries.get(requestId).assignedShifts += 1;
+          assignments.push({
+            requestId: request._id,
+            user: request.user,
+            date,
+            shift,
+            position,
+          });
+        });
+
+        if (existingCount + selected.length < capacity) {
+          shortages.push({
+            date,
+            shift,
+            position,
+            needed: capacity,
+            assigned: existingCount + selected.length,
+          });
+        }
+      }
+    }
+  }
+
+  return {
+    weekStart,
+    rules: {
+      warehousePerShift: autoScheduleCapacity.warehouse,
+      salePerShift: autoScheduleCapacity.sale,
+    },
+    assignments,
+    existingAssignments,
+    shortages,
+    requestSummaries: Array.from(requestSummaries.values()),
+  };
 };
 
 const retireDuplicatePendingScheduleRequests = async () => {
@@ -126,6 +281,77 @@ router.get("/users", async (req, res, next) => {
   try {
     const users = await User.find({ active: true }).select("-password").sort({ role: 1, name: 1 });
     res.json(users);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/rules", async (req, res, next) => {
+  try {
+    const rules = await WorkRule.find({}).sort({ order: 1, createdAt: 1 });
+    res.json(rules);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/rules", async (req, res, next) => {
+  try {
+    const title = String(req.body.title || "").trim();
+    const content = String(req.body.content || "").trim();
+    const order = Number(req.body.order || 0);
+    const active = req.body.active !== false;
+
+    if (!title || !content) return res.status(400).json({ message: "Vui lòng nhập tiêu đề và nội dung nội quy" });
+
+    const rule = await WorkRule.create({
+      title,
+      content,
+      order: Number.isFinite(order) ? order : 0,
+      active,
+      createdBy: req.user.id,
+      updatedBy: req.user.id,
+    });
+
+    res.status(201).json(rule);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/rules/:id", async (req, res, next) => {
+  try {
+    const title = String(req.body.title || "").trim();
+    const content = String(req.body.content || "").trim();
+    const order = Number(req.body.order || 0);
+    const active = req.body.active !== false;
+
+    if (!title || !content) return res.status(400).json({ message: "Vui lòng nhập tiêu đề và nội dung nội quy" });
+
+    const rule = await WorkRule.findByIdAndUpdate(
+      req.params.id,
+      {
+        title,
+        content,
+        order: Number.isFinite(order) ? order : 0,
+        active,
+        updatedBy: req.user.id,
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!rule) return res.status(404).json({ message: "Không tìm thấy nội quy" });
+    res.json(rule);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/rules/:id", async (req, res, next) => {
+  try {
+    const rule = await WorkRule.findByIdAndDelete(req.params.id);
+    if (!rule) return res.status(404).json({ message: "Không tìm thấy nội quy" });
+    res.json({ message: "Đã xoá nội quy" });
   } catch (error) {
     next(error);
   }
@@ -209,14 +435,69 @@ router.put("/users/:id", async (req, res, next) => {
 
 router.delete("/users/:id", async (req, res, next) => {
   try {
-    const user = await User.findOneAndUpdate(
-      { _id: req.params.id, role: "user", active: true },
-      { active: false },
-      { new: true }
-    ).select("-password");
+    const userId = req.params.id;
+    const user = await User.findOne({ _id: userId, role: "user" }).select("-password");
 
     if (!user) return res.status(404).json({ message: "Không tìm thấy nhân sự" });
-    res.json({ message: "Đã xoá nhân sự", user });
+
+    if (user.active) {
+      user.active = false;
+      await user.save();
+    }
+
+    const taskReports = await TaskReport.find({ user: userId }).select("_id");
+    const taskReportIds = taskReports.map((report) => report._id);
+    const tasksOnlyAssignedToUser = await DailyTask.find({ $and: [{ assignedTo: userId }, { assignedTo: { $size: 1 } }] }).select("_id");
+    const taskIdsToDelete = tasksOnlyAssignedToUser.map((task) => task._id);
+
+    const [
+      schedules,
+      scheduleRequests,
+      overtime,
+      serviceExpenses,
+      checkouts,
+      salaryRecords,
+      taskReportsDeleted,
+      reportImages,
+      deletedTasks,
+      updatedTasks,
+    ] = await Promise.all([
+      WorkSchedule.deleteMany({ user: userId }),
+      WeeklyScheduleRequest.deleteMany({ user: userId }),
+      OvertimeRecord.deleteMany({ user: userId }),
+      ServiceExpense.deleteMany({ user: userId }),
+      CheckoutLog.deleteMany({ user: userId }),
+      SalaryRecord.deleteMany({ user: userId }),
+      TaskReport.deleteMany({ user: userId }),
+      ReportImage.deleteMany({ $or: [{ user: userId }, { report: { $in: taskReportIds } }] }),
+      DailyTask.deleteMany({ _id: { $in: taskIdsToDelete } }),
+      DailyTask.updateMany(
+        { assignedTo: userId, _id: { $nin: taskIdsToDelete } },
+        {
+          $pull: {
+            assignedTo: user._id,
+            statusByUser: { user: user._id },
+          },
+        }
+      ),
+    ]);
+
+    res.json({
+      message: "Đã xoá nhân sự và dữ liệu liên quan",
+      user,
+      deleted: {
+        schedules: schedules.deletedCount || 0,
+        scheduleRequests: scheduleRequests.deletedCount || 0,
+        overtime: overtime.deletedCount || 0,
+        serviceExpenses: serviceExpenses.deletedCount || 0,
+        checkouts: checkouts.deletedCount || 0,
+        salaryRecords: salaryRecords.deletedCount || 0,
+        taskReports: taskReportsDeleted.deletedCount || 0,
+        reportImages: reportImages.deletedCount || 0,
+        tasks: deletedTasks.deletedCount || 0,
+        taskAssignments: updatedTasks.modifiedCount || 0,
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -225,15 +506,106 @@ router.delete("/users/:id", async (req, res, next) => {
 router.get("/dashboard", async (req, res, next) => {
   try {
     const date = req.query.date || todayString();
-    const [employees, pendingSchedules, tasks, reports, checkouts] = await Promise.all([
-      User.countDocuments({ role: "user", active: true }),
+    const mode = req.query.mode === "week" ? "week" : "day";
+    const { range, filter } = dateRangeFilter({ mode, date });
+    const [employees, pendingSchedules, tasks, reports, checkouts, schedules] = await Promise.all([
+      User.find({ role: "user", active: true }).select("name email position").sort({ name: 1 }).lean(),
       WeeklyScheduleRequest.countDocuments({ status: "pending" }),
-      DailyTask.countDocuments({ date }),
-      TaskReport.countDocuments({ date }),
-      CheckoutLog.countDocuments({ date }),
+      DailyTask.find({ date: filter }).select("title date assignedTo statusByUser").lean(),
+      TaskReport.countDocuments({ date: filter }),
+      CheckoutLog.find({ date: filter }).select("user date checkoutAt").lean(),
+      WorkSchedule.find({ date: filter, status: "scheduled" }).select("user date shift").lean(),
     ]);
+    const scheduleByUser = new Map();
+    const checkoutByUser = new Map();
+    const taskByUser = new Map();
+    const activeUserIds = new Set(employees.map((employee) => String(employee._id)));
+    const validSchedules = schedules.filter((schedule) => activeUserIds.has(String(schedule.user)));
+    const scheduledDateKeys = new Set(validSchedules.map((schedule) => `${schedule.user}-${schedule.date}`));
+    const validCheckouts = checkouts.filter((checkout) => {
+      const userId = String(checkout.user);
+      return activeUserIds.has(userId) && scheduledDateKeys.has(`${userId}-${checkout.date}`);
+    });
 
-    res.json({ employees, pendingSchedules, todayTasks: tasks, todayReports: reports, todayCheckouts: checkouts });
+    validSchedules.forEach((schedule) => {
+      const userId = String(schedule.user);
+      const item = scheduleByUser.get(userId) || { dates: new Set(), shifts: 0 };
+      item.dates.add(schedule.date);
+      item.shifts += 1;
+      scheduleByUser.set(userId, item);
+    });
+
+    validCheckouts.forEach((checkout) => {
+      const userId = String(checkout.user);
+      const item = checkoutByUser.get(userId) || { dates: new Set(), count: 0 };
+      item.dates.add(checkout.date);
+      item.count += 1;
+      checkoutByUser.set(userId, item);
+    });
+
+    tasks.forEach((task) => {
+      (task.assignedTo || []).forEach((assignedUser) => {
+        const userId = String(assignedUser);
+        const status = task.statusByUser?.find((item) => String(item.user) === userId)?.status || "not-started";
+        const item = taskByUser.get(userId) || { assigned: 0, completed: 0, inProgress: 0, notStarted: 0 };
+        item.assigned += 1;
+        if (status === "completed") item.completed += 1;
+        else if (status === "in-progress") item.inProgress += 1;
+        else item.notStarted += 1;
+        taskByUser.set(userId, item);
+      });
+    });
+
+    const employeeRows = employees.map((employee) => {
+      const userId = String(employee._id);
+      const schedule = scheduleByUser.get(userId) || { dates: new Set(), shifts: 0 };
+      const checkout = checkoutByUser.get(userId) || { dates: new Set(), count: 0 };
+      const task = taskByUser.get(userId) || { assigned: 0, completed: 0, inProgress: 0, notStarted: 0 };
+      return {
+        user: employee,
+        position: employee.position || "warehouse",
+        scheduledDays: schedule.dates.size,
+        scheduledShifts: schedule.shifts,
+        checkoutDays: checkout.dates.size,
+        checkoutCount: checkout.count,
+        tasks: task,
+      };
+    });
+
+    const buildPositionSummary = (position) => {
+      const rows = employeeRows.filter((item) => item.position === position);
+      return {
+        employees: rows.length,
+        scheduledEmployees: rows.filter((item) => item.scheduledDays > 0).length,
+        scheduledShifts: rows.reduce((sum, item) => sum + item.scheduledShifts, 0),
+        checkoutDays: rows.reduce((sum, item) => sum + item.checkoutDays, 0),
+        assignedTasks: rows.reduce((sum, item) => sum + item.tasks.assigned, 0),
+        completedTasks: rows.reduce((sum, item) => sum + item.tasks.completed, 0),
+        inProgressTasks: rows.reduce((sum, item) => sum + item.tasks.inProgress, 0),
+        notStartedTasks: rows.reduce((sum, item) => sum + item.tasks.notStarted, 0),
+      };
+    };
+
+    res.json({
+      mode,
+      date,
+      range,
+      employees: employees.length,
+      pendingSchedules,
+      tasks: tasks.length,
+      reports,
+      checkouts: validCheckouts.length,
+      schedules: validSchedules.length,
+      scheduledEmployees: employeeRows.filter((item) => item.scheduledDays > 0).length,
+      positionSummary: {
+        warehouse: buildPositionSummary("warehouse"),
+        sale: buildPositionSummary("sale"),
+      },
+      employeeRows,
+      todayTasks: tasks.length,
+      todayReports: reports,
+      todayCheckouts: validCheckouts.length,
+    });
   } catch (error) {
     next(error);
   }
@@ -310,6 +682,49 @@ router.get("/schedule-requests", async (req, res, next) => {
     }
     const requests = await WeeklyScheduleRequest.find(filters).populate(populateUser).sort({ createdAt: -1 });
     res.json(requests);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/schedule-requests/auto-schedule", async (req, res, next) => {
+  try {
+    const plan = await buildAutoSchedulePlan(req.body.weekStart);
+
+    if (req.body.apply === true) {
+      await Promise.all(
+        plan.assignments.map((item) =>
+          WorkSchedule.updateOne(
+            { user: item.user._id, date: item.date, shift: item.shift },
+            {
+              user: item.user._id,
+              date: item.date,
+              shift: item.shift,
+              status: "scheduled",
+              request: item.requestId,
+              approvedBy: req.user.id,
+            },
+            { upsert: true }
+          )
+        )
+      );
+
+      await Promise.all(
+        plan.requestSummaries.map((item) =>
+          WeeklyScheduleRequest.updateOne(
+            { _id: item.requestId, status: "pending" },
+            {
+              status: "approved",
+              adminNote: `AI xếp ${item.assignedShifts}/${item.requestedShifts} ca đã đăng ký.`,
+              reviewedBy: req.user.id,
+              reviewedAt: new Date(),
+            }
+          )
+        )
+      );
+    }
+
+    res.json({ ...plan, applied: req.body.apply === true });
   } catch (error) {
     next(error);
   }
@@ -572,8 +987,43 @@ router.get("/salaries", async (req, res, next) => {
 router.get("/overtime", async (req, res, next) => {
   try {
     const { month, year } = parseMonthYear(req.query);
-    const records = await OvertimeRecord.find({ month, year }).populate(populateUser).sort({ createdAt: -1 });
+    const records = (await OvertimeRecord.find({ month, year }).populate(populateUser).sort({ createdAt: -1 }))
+      .filter((record) => record.user && record.user.active !== false);
     res.json(records);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/service-expenses", async (req, res, next) => {
+  try {
+    const { month, year } = parseMonthYear(req.query);
+    const { prefix } = calendarMonthRange(month, year);
+    const allRows = await ServiceExpense.find({ date: { $regex: `^${prefix}` } }).populate(populateUser).sort({ date: -1, createdAt: -1 });
+    const rows = allRows.filter((row) => row.user && row.user.active !== false);
+    const byUserMap = new Map();
+
+    rows.forEach((row) => {
+      const userId = String(row.user?._id || row.user);
+      const current = byUserMap.get(userId) || {
+        user: row.user,
+        records: 0,
+        amount: 0,
+      };
+      current.records += 1;
+      current.amount += Number(row.amount || 0);
+      byUserMap.set(userId, current);
+    });
+
+    res.json({
+      month,
+      year,
+      totalRecords: rows.length,
+      totalAmount: rows.reduce((sum, row) => sum + Number(row.amount || 0), 0),
+      employees: byUserMap.size,
+      byUser: Array.from(byUserMap.values()).sort((a, b) => b.amount - a.amount),
+      rows,
+    });
   } catch (error) {
     next(error);
   }

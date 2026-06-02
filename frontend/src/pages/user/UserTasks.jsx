@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { CheckCircle2, CircleDashed, ClipboardList, LoaderCircle } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api, authStorage } from "../../api";
 import { Alert, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
-import { formatDate, statusLabels, today } from "../../utils/workforce";
+import { formatDate, formatNumber, statusLabels, today } from "../../utils/workforce";
 
 export default function UserTasks() {
   const currentUser = authStorage.getUser();
@@ -31,6 +32,23 @@ export default function UserTasks() {
     const currentStatus = task.statusByUser?.find((item) => getUserId(item.user) === getUserId(currentUser));
     return currentStatus?.status || "not-started";
   };
+
+  const summary = useMemo(() => {
+    const statuses = rows.map(getStatus);
+    return {
+      total: statuses.length,
+      notStarted: statuses.filter((item) => item === "not-started").length,
+      inProgress: statuses.filter((item) => item === "in-progress").length,
+      completed: statuses.filter((item) => item === "completed").length,
+    };
+  }, [rows]);
+
+  const stats = [
+    ["Tổng việc", summary.total, ClipboardList, "blue"],
+    ["Chưa làm", summary.notStarted, CircleDashed, "slate"],
+    ["Đang làm", summary.inProgress, LoaderCircle, "amber"],
+    ["Đã xong", summary.completed, CheckCircle2, "green"],
+  ];
 
   const replaceTask = (updatedTask) => {
     setRows((currentRows) => currentRows.map((row) => (row._id === updatedTask._id ? updatedTask : row)));
@@ -112,6 +130,21 @@ export default function UserTasks() {
       </div>
       <Alert message={error} />
       <Alert message={message} type="success" />
+
+      <div className="stats-grid">
+        {stats.map(([label, value, Icon, tone]) => (
+          <article className="stat-card" key={label}>
+            <div className={`stat-icon ${tone}`}>
+              <Icon size={22} />
+            </div>
+            <div>
+              <span>{label}</span>
+              <strong>{formatNumber(value || 0)}</strong>
+            </div>
+          </article>
+        ))}
+      </div>
+
       <div className="toolbar date-filter">
         <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
       </div>
@@ -124,12 +157,12 @@ export default function UserTasks() {
                 <span>Ngày</span>
                 <strong>{formatDate(row.date)}</strong>
               </div>
-              <button className="button small ghost" type="button" onClick={() => openTask(row)}>Xem việc</button>
+              <button className="button small ghost" type="button" onClick={() => openTask(row)}>Xem</button>
             </div>
 
             <div className="task-board-fields">
               <div>
-                <span>Công việc</span>
+                <span>Tiêu đề</span>
                 <strong>{row.title}</strong>
               </div>
               <div>

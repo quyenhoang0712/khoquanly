@@ -1,26 +1,34 @@
-import { CalendarCheck, ClipboardList, Clock, Megaphone, Wallet } from "lucide-react";
+import { ArrowRight, CalendarCheck, ClipboardList, LogOut, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
-import { api } from "../../api";
+import { Link } from "react-router-dom";
+import { api, authStorage } from "../../api";
 import { Alert } from "../../components/DataState";
-import { formatCurrency, formatNumber, shiftLabels, today } from "../../utils/workforce";
+import { formatCurrency, formatNumber, shiftLabels, shiftTimeLabel, today } from "../../utils/workforce";
 
 export default function UserDashboard() {
+  const currentUser = authStorage.getUser();
+  const position = currentUser?.position || "warehouse";
   const [schedule, setSchedule] = useState([]);
-  const [coworkers, setCoworkers] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [checkouts, setCheckouts] = useState([]);
   const [salary, setSalary] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    Promise.all([api.getMySchedule({ date: today() }), api.getCoworkers({ date: today() }), api.getTodayTasks(), api.getMySalary()])
-      .then(([scheduleData, coworkersData, taskData, salaryData]) => { setSchedule(scheduleData); setCoworkers(coworkersData); setTasks(taskData); setSalary(salaryData); })
+    Promise.all([api.getMySchedule({ date: today() }), api.getTodayTasks(), api.getMyCheckouts({ date: today() }), api.getMySalary()])
+      .then(([scheduleData, taskData, checkoutData, salaryData]) => {
+        setSchedule(scheduleData);
+        setTasks(taskData);
+        setCheckouts(checkoutData);
+        setSalary(salaryData);
+      })
       .catch((err) => setError(err.message));
   }, []);
 
-  const coworkerNames = [...new Set(coworkers.map((item) => item.user?.name).filter(Boolean))];
+  const completedTasks = tasks.filter((task) => task.currentStatus === "completed").length;
+  const checkedOut = checkouts.length > 0;
   const stats = [
-    ["Ca hôm nay", schedule.map((item) => shiftLabels[item.shift]).join(", ") || "Không có", CalendarCheck, "blue"],
-    ["Làm với", coworkerNames.join(", ") || "-", Clock, "slate"],
+    ["Ca hôm nay", schedule.map((item) => `${shiftLabels[item.shift]} ${shiftTimeLabel(position, item.shift)}`).join(", ") || "Không có", CalendarCheck, "blue"],
     ["Công việc hôm nay", formatNumber(tasks.length), ClipboardList, "green"],
     ["Lương tạm tính", formatCurrency(salary?.totalSalary || 0), Wallet, "amber"],
   ];
@@ -34,17 +42,32 @@ export default function UserDashboard() {
         </div>
       </div>
       <Alert message={error} />
-      <div className="dashboard-note">
-        <div className="dashboard-note-icon">
-          <Megaphone size={24} />
-        </div>
-        <div>
-          <span>Lời nhắn hôm nay</span>
-          <p>
-            Hello các babi của a Q, các em nhớ check công việc hôm nay và làm báo cáo cho a nhé. Sau đó lúc về nhớ check out cho a nheee.
-          </p>
-        </div>
+
+      <div className="daily-report-grid">
+        <Link className="daily-report-card green" to="/user/tasks">
+          <div className="daily-report-icon">
+            <ClipboardList size={24} />
+          </div>
+          <div>
+            <span>Báo cáo ngày</span>
+            <strong>Việc làm hôm nay</strong>
+            <p>{formatNumber(completedTasks)}/{formatNumber(tasks.length)} việc đã xong</p>
+          </div>
+          <ArrowRight size={20} />
+        </Link>
+        <Link className={`daily-report-card ${checkedOut ? "blue" : "amber"}`} to="/user/checkout">
+          <div className="daily-report-icon">
+            <LogOut size={24} />
+          </div>
+          <div>
+            <span>Cuối ca</span>
+            <strong>Checkout</strong>
+            <p>{checkedOut ? "Đã checkout hôm nay" : "Bấm để qua trang checkout"}</p>
+          </div>
+          <ArrowRight size={20} />
+        </Link>
       </div>
+
       <div className="stats-grid">
         {stats.map(([label, value, Icon, tone]) => (
           <article className="stat-card" key={label}>

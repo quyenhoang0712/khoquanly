@@ -1,8 +1,9 @@
+import { Banknote, Clock3, Plus, ReceiptText, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../api";
 import { Alert, EmptyRow } from "../../components/DataState";
 import Modal from "../../components/Modal";
-import { exportCsv, formatCurrency, formatDate, formatNumber, salaryPeriodLabel } from "../../utils/workforce";
+import { exportCsv, formatCurrency, formatDate, formatNumber, salaryPeriodLabel, shiftTimeLabel } from "../../utils/workforce";
 
 export default function AdminSalaries() {
   const now = new Date();
@@ -94,11 +95,11 @@ export default function AdminSalaries() {
       </div>
 
       <div className="stats-grid salary-stats">
-        <article className="stat-card"><div><span>Nhân viên</span><strong>{formatNumber(summary.employees)}</strong></div></article>
-        <article className="stat-card"><div><span>Tổng ca</span><strong>{formatNumber(summary.shifts)}</strong></div></article>
-        <article className="stat-card"><div><span>Tổng giờ</span><strong>{formatNumber(summary.hours)}</strong></div></article>
-        <article className="stat-card"><div><span>Tăng ca</span><strong>{formatNumber(summary.overtimeHours)} giờ</strong></div></article>
-        <article className="stat-card"><div><span>Tổng lương</span><strong>{formatCurrency(summary.salary)}</strong></div></article>
+        <article className="stat-card"><div className="stat-icon blue"><Users size={22} /></div><div><span>Nhân viên</span><strong>{formatNumber(summary.employees)}</strong></div></article>
+        <article className="stat-card"><div className="stat-icon slate"><ReceiptText size={22} /></div><div><span>Tổng ca</span><strong>{formatNumber(summary.shifts)}</strong></div></article>
+        <article className="stat-card"><div className="stat-icon amber"><Clock3 size={22} /></div><div><span>Tổng giờ</span><strong>{formatNumber(summary.hours)}</strong></div></article>
+        <article className="stat-card"><div className="stat-icon purple"><Plus size={22} /></div><div><span>Tăng ca</span><strong>{formatNumber(summary.overtimeHours)} giờ</strong></div></article>
+        <article className="stat-card"><div className="stat-icon green"><Banknote size={22} /></div><div><span>Tổng lương</span><strong>{formatCurrency(summary.salary)}</strong></div></article>
       </div>
 
       {loading && <div className="panel task-board-empty">Đang tải bảng lương...</div>}
@@ -167,8 +168,8 @@ export default function AdminSalaries() {
                 {detail.details?.map((item) => (
                   <tr key={item.date}>
                     <td data-label="Ngày">{formatDate(item.date)}</td>
-                    <td data-label="Ca sáng">{item.morning ? "09:00 - 13:00" : "-"}</td>
-                    <td data-label="Ca chiều">{item.afternoon ? "13:00 - 17:00" : "-"}</td>
+                    <td data-label="Ca sáng">{item.morning ? shiftTimeLabel(detail.user?.position, "morning") : "-"}</td>
+                    <td data-label="Ca chiều">{item.afternoon ? shiftTimeLabel(detail.user?.position, "afternoon") : "-"}</td>
                     <td data-label="Giờ">{formatNumber(item.hours)}</td>
                     <td data-label="Lương">{formatCurrency(item.salary)}</td>
                   </tr>

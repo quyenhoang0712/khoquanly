@@ -24,6 +24,26 @@ export const shiftLabels = {
   "full-day": "Cả ngày",
 };
 
+export const shiftTimesByPosition = {
+  warehouse: {
+    morning: { start: "09:00", end: "13:00", label: "09:00 - 13:00" },
+    afternoon: { start: "13:00", end: "17:00", label: "13:00 - 17:00" },
+  },
+  sale: {
+    morning: { start: "10:00", end: "16:00", label: "10:00 - 16:00" },
+    afternoon: { start: "16:00", end: "22:00", label: "16:00 - 22:00" },
+  },
+};
+
+export const positionKey = (position) => (position === "sale" ? "sale" : "warehouse");
+
+export const shiftTimeLabel = (position, shift) => shiftTimesByPosition[positionKey(position)]?.[shift]?.label || "-";
+
+export const shiftEndDateTime = (date, position, shift) => {
+  const end = shiftTimesByPosition[positionKey(position)]?.[shift]?.end;
+  return end ? new Date(`${date}T${end}:00`) : null;
+};
+
 export const statusLabels = {
   pending: "Pending",
   approved: "Approved",

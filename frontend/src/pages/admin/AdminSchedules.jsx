@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../api";
-import CalendarMonth, { describeShift, groupByDate, monthKey, splitMonthKey } from "../../components/CalendarMonth";
+import CalendarMonth, { groupByDate, monthKey, splitMonthKey } from "../../components/CalendarMonth";
 import { Alert, EmptyRow, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
-import { formatDate, statusLabels } from "../../utils/workforce";
-
-const shiftTime = (shift) => (shift === "morning" ? "09:00 - 13:00" : "13:00 - 17:00");
+import { formatDate, shiftTimeLabel, statusLabels } from "../../utils/workforce";
 
 const summarizeEmployeeSchedules = (items) => {
   const grouped = items.reduce((acc, item) => {
@@ -45,8 +43,8 @@ const summarizeEmployeeSchedules = (items) => {
       timeLabel: isLeave
         ? "-"
         : hasMorning && hasAfternoon
-          ? "09:00 - 17:00"
-          : group.shifts.map(shiftTime).join(", ") || "-",
+          ? `${shiftTimeLabel(group.user?.position, "morning").split(" - ")[0]} - ${shiftTimeLabel(group.user?.position, "afternoon").split(" - ")[1]}`
+          : group.shifts.map((shift) => shiftTimeLabel(group.user?.position, shift)).join(", ") || "-",
       coworkers: [...group.coworkers].join(", ") || "-",
       status,
     };

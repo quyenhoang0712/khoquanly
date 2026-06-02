@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { api } from "../../api";
+import { api, authStorage } from "../../api";
 import CalendarMonth, { describeShift, groupByDate, monthKey, splitMonthKey } from "../../components/CalendarMonth";
 import { Alert, EmptyRow, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
-import { assetUrl, formatDate, shiftLabels, statusLabels } from "../../utils/workforce";
+import { assetUrl, formatDate, shiftTimeLabel, statusLabels } from "../../utils/workforce";
 
 export default function UserSchedule() {
+  const currentUser = authStorage.getUser();
+  const position = currentUser?.position || "warehouse";
   const [month, setMonth] = useState(monthKey());
   const [rows, setRows] = useState([]);
   const [checkouts, setCheckouts] = useState([]);
@@ -61,6 +63,7 @@ export default function UserSchedule() {
         month={month}
         itemsByDate={itemsByDate}
         onDayClick={openDay}
+        position={position}
         renderMeta={(date) => checkoutByDate[date] && <span className="calendar-checkout">Đã checkout</span>}
       />
 
@@ -92,7 +95,7 @@ export default function UserSchedule() {
                 {dayItems.map((item) => (
                   <tr key={item._id}>
                     <td data-label="Ca làm">{describeShift(item)}</td>
-                    <td data-label="Thời gian">{item.status === "leave" ? "-" : item.shift === "morning" ? "09:00 - 13:00" : "13:00 - 17:00"}</td>
+                    <td data-label="Thời gian">{item.status === "leave" ? "-" : shiftTimeLabel(position, item.shift)}</td>
                     <td data-label="Trạng thái"><StatusBadge status={statusLabels[item.status] || item.status} /></td>
                   </tr>
                 ))}

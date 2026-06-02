@@ -65,11 +65,23 @@ export const api = {
     return parseResponse(await request(`${API_BASE_URL}/auth/me`));
   },
 
-  async getAdminDashboard() {
-    return parseResponse(await request(`${API_BASE_URL}/admin/dashboard`));
+  async getAdminDashboard(params) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/dashboard${query(params)}`));
   },
   async getAdminUsers() {
     return parseResponse(await request(`${API_BASE_URL}/admin/users`));
+  },
+  async getAdminRules() {
+    return parseResponse(await request(`${API_BASE_URL}/admin/rules`));
+  },
+  async createAdminRule(payload) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/rules`, jsonOptions("POST", payload)));
+  },
+  async updateAdminRule(id, payload) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/rules/${id}`, jsonOptions("PUT", payload)));
+  },
+  async deleteAdminRule(id) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/rules/${id}`, { method: "DELETE" }));
   },
   async createAdminUser(payload) {
     return parseResponse(await request(`${API_BASE_URL}/admin/users`, jsonOptions("POST", payload)));
@@ -98,6 +110,9 @@ export const api = {
   async reviewScheduleRequest(id, action, adminNote = "") {
     return parseResponse(await request(`${API_BASE_URL}/admin/schedule-requests/${id}/${action}`, jsonOptions("PUT", { adminNote })));
   },
+  async autoScheduleRequests(payload) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/schedule-requests/auto-schedule`, jsonOptions("POST", payload)));
+  },
   async createAdminTask(payload) {
     return parseResponse(await request(`${API_BASE_URL}/admin/tasks`, jsonOptions("POST", payload)));
   },
@@ -125,6 +140,9 @@ export const api = {
   async getAdminOvertime(params) {
     return parseResponse(await request(`${API_BASE_URL}/admin/overtime${query(params)}`));
   },
+  async getAdminServiceExpenses(params) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/service-expenses${query(params)}`));
+  },
   async createAdminOvertime(payload) {
     return parseResponse(await request(`${API_BASE_URL}/admin/overtime`, jsonOptions("POST", payload)));
   },
@@ -147,6 +165,9 @@ export const api = {
   async getCoworkers(params) {
     return parseResponse(await request(`${API_BASE_URL}/user/coworkers${query(params)}`));
   },
+  async getMyScheduleRequests(params) {
+    return parseResponse(await request(`${API_BASE_URL}/user/schedule-requests${query(params)}`));
+  },
   async createScheduleRequest(payload) {
     return parseResponse(await request(`${API_BASE_URL}/user/schedule-requests`, jsonOptions("POST", payload)));
   },
@@ -168,7 +189,16 @@ export const api = {
     }
     return parseResponse(await request(`${API_BASE_URL}/user/checkout`, jsonOptions("POST", payload)));
   },
+  async getMyServiceExpenses(params) {
+    return parseResponse(await request(`${API_BASE_URL}/user/service-expenses${query(params)}`));
+  },
+  async createServiceExpense(payload) {
+    return parseResponse(await request(`${API_BASE_URL}/user/service-expenses`, jsonOptions("POST", payload)));
+  },
   async getMySalary(params) {
     return parseResponse(await request(`${API_BASE_URL}/user/my-salary${query(params)}`));
+  },
+  async getRules() {
+    return parseResponse(await request(`${API_BASE_URL}/user/rules`));
   },
 };

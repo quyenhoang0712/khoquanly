@@ -3,12 +3,16 @@ const multer = require("multer");
 const CheckoutLog = require("../models/CheckoutLog");
 const DailyTask = require("../models/DailyTask");
 const ReportImage = require("../models/ReportImage");
+const ServiceExpense = require("../models/ServiceExpense");
 const TaskReport = require("../models/TaskReport");
 const WeeklyScheduleRequest = require("../models/WeeklyScheduleRequest");
 const WorkSchedule = require("../models/WorkSchedule");
+const WorkRule = require("../models/WorkRule");
+const User = require("../models/User");
 const { uploadImages } = require("../utils/cloudinary");
 const { calculateSalary } = require("../utils/salary");
 const { todayString } = require("../utils/date");
+const { shiftEndDateTime } = require("../utils/shifts");
 
 const router = express.Router();
 const upload = multer({
@@ -86,10 +90,23 @@ router.get("/coworkers", async (req, res, next) => {
   }
 });
 
+router.get("/schedule-requests", async (req, res, next) => {
+  try {
+    const filters = { user: req.user.id };
+    if (req.query.weekStart) filters.weekStart = req.query.weekStart;
+    if (req.query.status) filters.status = req.query.status;
+
+    const requests = await WeeklyScheduleRequest.find(filters).sort({ weekStart: -1, createdAt: -1 });
+    res.json(requests);
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post("/schedule-requests", async (req, res, next) => {
   try {
     const { weekStart, shifts, note } = req.body;
-    if (!weekStart || !shifts?.length) return res.status(400).json({ message: "Week start and shifts are required" });
+    if (!weekStart || !shifts?.length) return res.status(400).json({ message: "Vui lòng chọn ít nhất một ca đi làm trong tuần sau" });
     const request = await WeeklyScheduleRequest.findOneAndUpdate(
       { user: req.user.id, weekStart, status: "pending" },
       { user: req.user.id, weekStart, shifts, note },
@@ -161,6 +178,31 @@ router.post("/tasks/:id/report", upload.array("images", 6), async (req, res, nex
 router.post("/checkout", upload.array("images", 6), async (req, res, next) => {
   try {
     const date = req.body.date || todayString();
+    if (date !== todayString()) {
+      return res.status(400).json({ message: "Chỉ được checkout cho ngày hôm nay" });
+    }
+    const [user, schedules] = await Promise.all([
+      User.findById(req.user.id).select("position"),
+      WorkSchedule.find({ user: req.user.id, date, status: "scheduled" }).lean(),
+    ]);
+
+    if (!schedules.length) {
+      return res.status(400).json({ message: "Bạn không có lịch làm trong ngày này" });
+    }
+
+    const latestShiftEnd = schedules
+      .map((schedule) => shiftEndDateTime(date, user?.position, schedule.shift))
+      .filter(Boolean)
+      .sort((a, b) => b.getTime() - a.getTime())[0];
+    const checkoutOpenAt = new Date(latestShiftEnd.getTime() - 10 * 60 * 1000);
+    const now = new Date();
+
+    if (now < checkoutOpenAt) {
+      return res.status(403).json({
+        message: `Chỉ được checkout từ ${checkoutOpenAt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Ho_Chi_Minh" })}, trước giờ kết ca 10 phút`,
+      });
+    }
+
     const imagePaths = await uploadImages(req.files || []);
     const update = {
       user: req.user.id,
@@ -181,12 +223,61 @@ router.post("/checkout", upload.array("images", 6), async (req, res, next) => {
   }
 });
 
+router.get("/service-expenses", async (req, res, next) => {
+  try {
+    const filters = { user: req.user.id };
+    if (req.query.date) filters.date = req.query.date;
+    if (req.query.month && req.query.year) {
+      const month = String(req.query.month).padStart(2, "0");
+      filters.date = { $regex: `^${req.query.year}-${month}` };
+    }
+    const expenses = await ServiceExpense.find(filters).sort({ date: -1, createdAt: -1 });
+    res.json(expenses);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/service-expenses", async (req, res, next) => {
+  try {
+    const date = req.body.date || todayString();
+    const title = String(req.body.title || "").trim();
+    const amount = Number(req.body.amount);
+    const note = String(req.body.note || "").trim();
+
+    if (!date || !title || !Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({ message: "Vui lòng nhập ngày, nội dung chi phí và số tiền hợp lệ" });
+    }
+
+    const expense = await ServiceExpense.create({
+      user: req.user.id,
+      date,
+      title,
+      amount,
+      note,
+    });
+
+    res.status(201).json(expense);
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get("/my-salary", async (req, res, next) => {
   try {
     const [currentYear, currentMonth] = todayString().split("-").map(Number);
     const month = Number(req.query.month || currentMonth);
     const year = Number(req.query.year || currentYear);
     res.json({ month, year, ...(await calculateSalary(req.user.id, month, year)) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/rules", async (req, res, next) => {
+  try {
+    const rules = await WorkRule.find({ active: true }).sort({ order: 1, createdAt: 1 });
+    res.json(rules);
   } catch (error) {
     next(error);
   }

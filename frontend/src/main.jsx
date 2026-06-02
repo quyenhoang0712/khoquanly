@@ -9,15 +9,19 @@ import AdminEmployees from "./pages/admin/AdminEmployees";
 import { AdminScheduleRequests } from "./pages/admin/AdminRequests";
 import AdminOvertime from "./pages/admin/AdminOvertime";
 import AdminReports from "./pages/admin/AdminReports";
+import AdminRules from "./pages/admin/AdminRules";
 import AdminSalaries from "./pages/admin/AdminSalaries";
 import AdminSchedules from "./pages/admin/AdminSchedules";
+import AdminServiceExpenses from "./pages/admin/AdminServiceExpenses";
 import AdminTasks from "./pages/admin/AdminTasks";
 import Login from "./pages/Login";
 import UserCheckout from "./pages/user/UserCheckout";
 import UserDashboard from "./pages/user/UserDashboard";
+import UserRules from "./pages/user/UserRules";
 import UserSalary from "./pages/user/UserSalary";
 import UserSchedule from "./pages/user/UserSchedule";
 import UserScheduleRequest from "./pages/user/UserScheduleRequest";
+import UserServiceExpenses from "./pages/user/UserServiceExpenses";
 import UserTasks from "./pages/user/UserTasks";
 import "./styles.css";
 
@@ -47,10 +51,12 @@ createRoot(document.getElementById("root")).render(
           <Route path="/admin/schedules" element={<AdminSchedules />} />
           <Route path="/admin/schedule-requests" element={<AdminScheduleRequests />} />
           <Route path="/admin/tasks" element={<AdminTasks />} />
+          <Route path="/admin/service-expenses" element={<AdminServiceExpenses />} />
           <Route path="/admin/overtime" element={<AdminOvertime />} />
           <Route path="/admin/checkouts" element={<AdminCheckouts />} />
           <Route path="/admin/reports" element={<AdminReports />} />
           <Route path="/admin/salaries" element={<AdminSalaries />} />
+          <Route path="/admin/rules" element={<AdminRules />} />
         </Route>
 
         <Route element={<ProtectedRoute role="user" />}>
@@ -58,8 +64,10 @@ createRoot(document.getElementById("root")).render(
           <Route path="/user/schedule" element={<UserSchedule />} />
           <Route path="/user/schedule-request" element={<UserScheduleRequest />} />
           <Route path="/user/tasks" element={<UserTasks />} />
+          <Route path="/user/service-expenses" element={<UserServiceExpenses />} />
           <Route path="/user/checkout" element={<UserCheckout />} />
           <Route path="/user/salary" element={<UserSalary />} />
+          <Route path="/user/rules" element={<UserRules />} />
         </Route>
 
         <Route path="*" element={<HomeRedirect />} />

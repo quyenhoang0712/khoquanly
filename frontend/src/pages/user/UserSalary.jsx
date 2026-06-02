@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { api } from "../../api";
+import { api, authStorage } from "../../api";
 import { Alert, EmptyRow } from "../../components/DataState";
-import { formatCurrency, formatDate, formatNumber, salaryPeriodLabel } from "../../utils/workforce";
+import { formatCurrency, formatDate, formatNumber, salaryPeriodLabel, shiftTimeLabel } from "../../utils/workforce";
 
 export default function UserSalary() {
+  const currentUser = authStorage.getUser();
+  const position = currentUser?.position || "warehouse";
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
@@ -93,8 +95,8 @@ export default function UserSalary() {
             {salary?.details?.map((item) => (
               <tr key={item.date}>
                 <td data-label="Ngày">{formatDate(item.date)}</td>
-                <td data-label="Ca sáng">{item.morning ? "09:00 - 13:00" : "-"}</td>
-                <td data-label="Ca chiều">{item.afternoon ? "13:00 - 17:00" : "-"}</td>
+                <td data-label="Ca sáng">{item.morning ? shiftTimeLabel(position, "morning") : "-"}</td>
+                <td data-label="Ca chiều">{item.afternoon ? shiftTimeLabel(position, "afternoon") : "-"}</td>
                 <td data-label="Giờ">{formatNumber(item.hours)}</td>
                 <td data-label="Lương">{formatCurrency(item.salary)}</td>
               </tr>
@@ -113,10 +115,10 @@ export default function UserSalary() {
             </div>
             <div className="salary-shifts">
               <span className={item.morning ? "shift-pill active" : "shift-pill"}>
-                Ca sáng {item.morning ? "09:00 - 13:00" : "-"}
+                Ca sáng {item.morning ? shiftTimeLabel(position, "morning") : "-"}
               </span>
               <span className={item.afternoon ? "shift-pill active afternoon" : "shift-pill"}>
-                Ca chiều {item.afternoon ? "13:00 - 17:00" : "-"}
+                Ca chiều {item.afternoon ? shiftTimeLabel(position, "afternoon") : "-"}
               </span>
             </div>
             <div className="salary-day-total">
