@@ -80,7 +80,7 @@ export default function AdminSalaries() {
         <div>
           <p className="eyebrow">Payroll</p>
           <h1>Bảng lương nhân viên</h1>
-          <p className="muted">Kỳ lương 4 tuần, bắt đầu ngày 11: {periodLabel}</p>
+          <p className="muted">Kỳ lương 4 tuần: {periodLabel}</p>
         </div>
         <button className="button primary" type="button" onClick={doExport}>
           Xuất bảng lương
@@ -160,7 +160,7 @@ export default function AdminSalaries() {
 
       {detail && (
         <Modal title={`Chi tiết lương - ${detail.user?.name || "Nhân viên"}`} onClose={() => setDetail(null)}>
-          <p className="muted">Kỳ lương 4 tuần, bắt đầu ngày 11: {salaryPeriodLabel(detail.month, detail.year, detail.periodStart, detail.periodEnd)}</p>
+          <p className="muted">Kỳ lương 4 tuần: {salaryPeriodLabel(detail.month, detail.year, detail.periodStart, detail.periodEnd)}</p>
           <div className="salary-detail-summary">
             <div><span>Tổng ca</span><strong>{formatNumber(detail.totalShifts)}</strong></div>
             <div><span>Tổng giờ</span><strong>{formatNumber(detail.totalHours)}</strong></div>

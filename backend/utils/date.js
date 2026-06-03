@@ -42,8 +42,11 @@ const monthRange = (month, year) => {
 };
 
 const salaryPeriodRange = (month, year) => {
-  // Payroll is a fixed 4-week period that starts on the 11th of the selected month.
-  const startDate = new Date(Number(year), Number(month) - 1, 11);
+  // Payroll is a fixed 4-week chain anchored at the June 2026 period.
+  // June 2026 starts on 2026-05-25, so May 2026 starts on 2026-04-27.
+  const periodOffset = (Number(year) - 2026) * 12 + (Number(month) - 6);
+  const startDate = new Date(2026, 4, 25);
+  startDate.setDate(startDate.getDate() + periodOffset * 28);
   const endDate = new Date(startDate);
   endDate.setDate(startDate.getDate() + 27);
 

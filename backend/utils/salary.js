@@ -31,9 +31,16 @@ const calculateSalary = async (userId, month, year) => {
     }).lean(),
     OvertimeRecord.find({
       user: userId,
-      month,
-      year,
       $or: [{ status: "approved" }, { status: { $exists: false } }],
+      $and: [
+        {
+          $or: [
+            { date: { $gte: start, $lte: end } },
+            { date: "", month, year },
+            { date: { $exists: false }, month, year },
+          ],
+        },
+      ],
     }).sort({ date: 1, createdAt: 1 }).lean(),
     WorkSchedule.findOne({ user: userId, status: "scheduled" }).sort({ date: 1 }).select("date").lean(),
   ]);

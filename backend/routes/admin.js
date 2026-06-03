@@ -12,6 +12,7 @@ const WorkSchedule = require("../models/WorkSchedule");
 const WorkRule = require("../models/WorkRule");
 const { calculateSalary } = require("../utils/salary");
 const { todayString } = require("../utils/date");
+const { sendEmployeeWelcomeEmail } = require("../utils/mailer");
 const { hashPassword } = require("../utils/password");
 
 const router = express.Router();
@@ -389,9 +390,15 @@ router.post("/users", async (req, res, next) => {
       active: true,
     });
 
+    const emailDelivery = await sendEmployeeWelcomeEmail({ to: email, name, password }).catch((error) => ({
+      sent: false,
+      skipped: false,
+      reason: error.message,
+    }));
+
     const created = user.toObject();
     delete created.password;
-    res.status(201).json(created);
+    res.status(201).json({ ...created, emailDelivery });
   } catch (error) {
     next(error);
   }

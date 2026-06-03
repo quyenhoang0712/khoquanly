@@ -2507,13 +2507,14 @@ tbody tr:hover {
   white-space: normal;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   line-height: 1.2;
 }
 
 .calendar-event.leave {
   color: var(--amber);
   background: var(--amber-soft);
-}
+}c
 
 .calendar-more,
 .calendar-count {

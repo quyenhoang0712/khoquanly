@@ -76,13 +76,18 @@ export default function AdminEmployees() {
         const payload = { ...form };
         if (!payload.password) delete payload.password;
         await api.updateAdminUser(editingUser._id, payload);
+        setMessage("Đã ghi nhận.");
       } else {
-        await api.createAdminUser(form);
+        const created = await api.createAdminUser(form);
+        setMessage(
+          created.emailDelivery?.sent
+            ? "Đã tạo nhân sự và gửi thông tin đăng nhập qua email."
+            : `Đã tạo nhân sự nhưng chưa gửi được email. ${created.emailDelivery?.reason || "Vui lòng kiểm tra cấu hình SMTP."}`
+        );
       }
       setOpen(false);
       setEditingUser(null);
       setForm(initialForm);
-      setMessage("Đã ghi nhận.");
       await loadUsers();
     } catch (err) {
       setError(err.message);

@@ -60,6 +60,18 @@ CLOUDINARY_API_SECRET=
 
 Mongo chỉ lưu URL ảnh Cloudinary trong field `images`, không lưu file ảnh.
 
+Gửi email thông tin đăng nhập cho nhân viên khi Admin tạo tài khoản dùng SMTP. Ví dụ với Gmail cần dùng App Password:
+
+```text
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-gmail-app-password
+MAIL_FROM=your-email@gmail.com
+```
+
+Nếu chưa cấu hình SMTP, tài khoản vẫn được tạo nhưng hệ thống sẽ báo chưa gửi được email.
+
 Nếu database đang có user cũ lưu mật khẩu dạng plaintext, chạy một lần:
 
 ```bash
@@ -69,7 +81,7 @@ npm run migrate:passwords
 
 ## Kỳ lương
 
-Bảng lương đang tính theo kỳ cố định 4 tuần: ngày 11 của tháng được chọn đến ngày 8 của tháng sau. Ví dụ kỳ lương tháng 6/2026 là `2026-06-11` đến `2026-07-08`, không phải toàn bộ tháng dương lịch.
+Bảng lương đang tính theo chuỗi kỳ cố định 4 tuần, lấy kỳ tháng 6/2026 làm mốc bắt đầu `2026-05-25`. Ví dụ kỳ lương tháng 5/2026 là `2026-04-27` đến `2026-05-24`, kỳ lương tháng 6/2026 là `2026-05-25` đến `2026-06-21`, không phải toàn bộ tháng dương lịch.
 
 ## Chạy frontend
 
