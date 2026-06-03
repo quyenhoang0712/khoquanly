@@ -1,9 +1,9 @@
 import { Clock3, Plus, ReceiptText, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../api";
-import { Alert } from "../../components/DataState";
+import { Alert, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
-import { formatCurrency, formatNumber } from "../../utils/workforce";
+import { formatCurrency, formatDate, formatNumber } from "../../utils/workforce";
 
 export default function AdminOvertime() {
   const now = new Date();
@@ -22,12 +22,13 @@ export default function AdminOvertime() {
       rows.reduce(
         (acc, row) => ({
           records: acc.records + 1,
+          pending: acc.pending + (row.status === "pending" ? 1 : 0),
           employees: acc.employeeIds.add(String(row.user?._id || row.user)).size,
-          hours: acc.hours + Number(row.hours || 0),
-          amount: acc.amount + Number(row.amount || 0),
+          hours: acc.hours + (row.status === "approved" || !row.status ? Number(row.hours || 0) : 0),
+          amount: acc.amount + (row.status === "approved" || !row.status ? Number(row.amount || 0) : 0),
           employeeIds: acc.employeeIds,
         }),
-        { records: 0, employees: 0, hours: 0, amount: 0, employeeIds: new Set() }
+        { records: 0, pending: 0, employees: 0, hours: 0, amount: 0, employeeIds: new Set() }
       ),
     [rows]
   );
@@ -49,7 +50,7 @@ export default function AdminOvertime() {
 
   const openCreate = () => {
     setEditingRecord(null);
-    setForm({ userId: users[0]?._id || "", hours: "", note: "" });
+    setForm({ userId: users[0]?._id || "", date: "", hours: "", note: "" });
     setError("");
     setMessage("");
     setOpen(true);
@@ -59,6 +60,7 @@ export default function AdminOvertime() {
     setEditingRecord(record);
     setForm({
       userId: record.user?._id || "",
+      date: record.date || "",
       hours: String(record.hours || ""),
       note: record.note || "",
     });
@@ -87,13 +89,13 @@ export default function AdminOvertime() {
     }
   };
 
-  const remove = async (id) => {
-    if (!window.confirm("Xoá dòng tăng ca này?")) return;
+  const review = async (record, action) => {
+    const adminNote = action === "rejected" ? window.prompt("Lý do từ chối phiếu tăng ca?", "") || "" : "";
     try {
       setError("");
       setMessage("");
-      await api.deleteAdminOvertime(id);
-      setMessage("Đã xoá tăng ca.");
+      await api.reviewAdminOvertime(record._id, { action, adminNote });
+      setMessage(action === "approved" ? "Đã duyệt tăng ca." : "Đã từ chối tăng ca.");
       await load();
     } catch (err) {
       setError(err.message);
@@ -105,10 +107,11 @@ export default function AdminOvertime() {
       <div className="page-header">
         <div>
           <p className="eyebrow">Tăng ca</p>
-          <h1>Quản lý tăng ca</h1>
+          <h1>Duyệt tăng ca</h1>
+          <p className="page-subtitle">Duyệt phiếu tăng ca nhân viên gửi để cộng vào bảng lương.</p>
         </div>
         <button className="button primary" type="button" onClick={openCreate}>
-          Thêm tăng ca
+          Thêm tay
         </button>
       </div>
 
@@ -132,8 +135,9 @@ export default function AdminOvertime() {
 
       <div className="stats-grid">
         <article className="stat-card"><div className="stat-icon blue"><ReceiptText size={22} /></div><div><span>Dòng tăng ca</span><strong>{formatNumber(summary.records)}</strong></div></article>
+        <article className="stat-card"><div className="stat-icon amber"><ReceiptText size={22} /></div><div><span>Chờ duyệt</span><strong>{formatNumber(summary.pending)}</strong></div></article>
         <article className="stat-card"><div className="stat-icon slate"><Users size={22} /></div><div><span>Nhân viên</span><strong>{formatNumber(summary.employees)}</strong></div></article>
-        <article className="stat-card"><div className="stat-icon amber"><Clock3 size={22} /></div><div><span>Tổng giờ</span><strong>{formatNumber(summary.hours)}</strong></div></article>
+        <article className="stat-card"><div className="stat-icon purple"><Clock3 size={22} /></div><div><span>Giờ đã duyệt</span><strong>{formatNumber(summary.hours)}</strong></div></article>
         <article className="stat-card"><div className="stat-icon green"><Plus size={22} /></div><div><span>Cộng lương</span><strong>{formatCurrency(summary.amount)}</strong></div></article>
       </div>
 
@@ -146,20 +150,32 @@ export default function AdminOvertime() {
                 <span>Nhân viên</span>
                 <strong>{row.user?.name || "Nhân viên"}</strong>
               </div>
+              <StatusBadge status={row.status || "approved"} />
               <div className="row-actions">
+                {row.status === "pending" && (
+                  <>
+                    <button className="button small primary" type="button" onClick={() => review(row, "approved")}>
+                      Duyệt
+                    </button>
+                    <button className="button small danger" type="button" onClick={() => review(row, "rejected")}>
+                      Từ chối
+                    </button>
+                  </>
+                )}
                 <button className="button small ghost" type="button" onClick={() => openEdit(row)}>
                   Sửa
-                </button>
-                <button className="button small danger" type="button" onClick={() => remove(row._id)}>
-                  Xoá
                 </button>
               </div>
             </div>
 
             <div className="task-board-fields">
               <div>
+                <span>Ngày tăng ca</span>
+                <strong>{row.date ? formatDate(row.date) : "-"}</strong>
+              </div>
+              <div>
                 <span>Số giờ</span>
-                <strong>{formatNumber(row.hours)}</strong>
+                <strong>{formatNumber(row.hours)} giờ</strong>
               </div>
               <div>
                 <span>Đơn giá</span>
@@ -167,11 +183,15 @@ export default function AdminOvertime() {
               </div>
               <div>
                 <span>Cộng lương</span>
-                <strong>{formatCurrency(row.amount)}</strong>
+                <strong>{row.status === "rejected" ? "-" : formatCurrency(row.amount)}</strong>
               </div>
               <div>
                 <span>Ghi chú</span>
                 <p>{row.note || "-"}</p>
+              </div>
+              <div>
+                <span>Phản hồi admin</span>
+                <p>{row.adminNote || "-"}</p>
               </div>
             </div>
           </article>
@@ -189,6 +209,10 @@ export default function AdminOvertime() {
                   <option key={user._id} value={user._id}>{user.name} - {user.email}</option>
                 ))}
               </select>
+            </label>
+            <label className="field">
+              <span>Ngày tăng ca</span>
+              <input type="date" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} />
             </label>
             <label className="field">
               <span>Số giờ tăng ca</span>

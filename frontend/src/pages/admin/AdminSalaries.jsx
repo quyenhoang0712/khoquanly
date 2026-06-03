@@ -23,9 +23,10 @@ export default function AdminSalaries() {
           hours: acc.hours + Number(row.totalHours || 0),
           overtimeHours: acc.overtimeHours + Number(row.overtimeHours || 0),
           overtimeSalary: acc.overtimeSalary + Number(row.overtimeSalary || 0),
+          travelAllowance: acc.travelAllowance + Number(row.travelAllowance || 0),
           salary: acc.salary + Number(row.totalSalary || 0),
         }),
-        { employees: 0, shifts: 0, hours: 0, overtimeHours: 0, overtimeSalary: 0, salary: 0 }
+        { employees: 0, shifts: 0, hours: 0, overtimeHours: 0, overtimeSalary: 0, travelAllowance: 0, salary: 0 }
       ),
     [rows]
   );
@@ -59,8 +60,17 @@ export default function AdminSalaries() {
   const doExport = () => {
     exportCsv(`bang-luong-ky-${month}-${year}.csv`, [
       ["Ky luong", periodLabel],
-      ["Nhan vien", "Email", "Tong ca", "Tong gio", "Gio tang ca", "Tien tang ca", "Tong luong"],
-      ...rows.map((row) => [row.user?.name, row.user?.email, row.totalShifts, row.totalHours, row.overtimeHours || 0, row.overtimeSalary || 0, row.totalSalary]),
+      ["Nhan vien", "Email", "Tong ca", "Tong gio", "Gio tang ca", "Tien tang ca", "Phi di lai", "Tong luong"],
+      ...rows.map((row) => [
+        row.user?.name,
+        row.user?.email,
+        row.totalShifts,
+        row.totalHours,
+        row.overtimeHours || 0,
+        row.overtimeSalary || 0,
+        row.travelAllowance || 0,
+        row.totalSalary,
+      ]),
     ]);
   };
 
@@ -99,6 +109,7 @@ export default function AdminSalaries() {
         <article className="stat-card"><div className="stat-icon slate"><ReceiptText size={22} /></div><div><span>Tổng ca</span><strong>{formatNumber(summary.shifts)}</strong></div></article>
         <article className="stat-card"><div className="stat-icon amber"><Clock3 size={22} /></div><div><span>Tổng giờ</span><strong>{formatNumber(summary.hours)}</strong></div></article>
         <article className="stat-card"><div className="stat-icon purple"><Plus size={22} /></div><div><span>Tăng ca</span><strong>{formatNumber(summary.overtimeHours)} giờ</strong></div></article>
+        <article className="stat-card"><div className="stat-icon blue"><ReceiptText size={22} /></div><div><span>Phí đi lại</span><strong>{formatCurrency(summary.travelAllowance)}</strong></div></article>
         <article className="stat-card"><div className="stat-icon green"><Banknote size={22} /></div><div><span>Tổng lương</span><strong>{formatCurrency(summary.salary)}</strong></div></article>
       </div>
 
@@ -135,6 +146,10 @@ export default function AdminSalaries() {
                   <p>{formatNumber(row.overtimeHours || 0)} giờ · {formatCurrency(row.overtimeSalary || 0)}</p>
                 </div>
                 <div>
+                  <span>Phí đi lại</span>
+                  <p>{row.travelAllowance ? formatCurrency(row.travelAllowance) : "-"}</p>
+                </div>
+                <div>
                   <span>Tổng lương</span>
                   <p><strong>{formatCurrency(row.totalSalary)}</strong></p>
                 </div>
@@ -150,8 +165,35 @@ export default function AdminSalaries() {
             <div><span>Tổng ca</span><strong>{formatNumber(detail.totalShifts)}</strong></div>
             <div><span>Tổng giờ</span><strong>{formatNumber(detail.totalHours)}</strong></div>
             <div><span>Tăng ca</span><strong>{formatNumber(detail.overtimeHours || 0)} giờ</strong></div>
+            <div><span>Phí đi lại</span><strong>{formatCurrency(detail.travelAllowance || 0)}</strong></div>
             <div><span>Tổng lương</span><strong>{formatCurrency(detail.totalSalary)}</strong></div>
           </div>
+          {detail.overtimeRecords?.length > 0 && (
+            <div className="table-wrap mobile-card-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Ngày tăng ca</th>
+                    <th>Giờ</th>
+                    <th>Đơn giá</th>
+                    <th>Tiền tăng ca</th>
+                    <th>Ghi chú</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {detail.overtimeRecords.map((item) => (
+                    <tr key={item._id}>
+                      <td data-label="Ngày tăng ca">{item.date ? formatDate(item.date) : `Tháng ${item.month}/${item.year}`}</td>
+                      <td data-label="Giờ">{formatNumber(item.hours)}</td>
+                      <td data-label="Đơn giá">{formatCurrency(item.hourlyRate)}</td>
+                      <td data-label="Tiền tăng ca">{formatCurrency(item.amount)}</td>
+                      <td data-label="Ghi chú">{item.note || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           <div className="table-wrap mobile-card-table">
             <table>
               <thead>

@@ -2,6 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const CheckoutLog = require("../models/CheckoutLog");
 const DailyTask = require("../models/DailyTask");
+const OvertimeRecord = require("../models/OvertimeRecord");
 const ReportImage = require("../models/ReportImage");
 const ServiceExpense = require("../models/ServiceExpense");
 const TaskReport = require("../models/TaskReport");
@@ -12,7 +13,6 @@ const User = require("../models/User");
 const { uploadImages } = require("../utils/cloudinary");
 const { calculateSalary } = require("../utils/salary");
 const { todayString } = require("../utils/date");
-const { shiftEndDateTime } = require("../utils/shifts");
 
 const router = express.Router();
 const upload = multer({
@@ -108,8 +108,8 @@ router.post("/schedule-requests", async (req, res, next) => {
     const { weekStart, shifts, note } = req.body;
     if (!weekStart || !shifts?.length) return res.status(400).json({ message: "Vui lòng chọn ít nhất một ca đi làm trong tuần sau" });
     const request = await WeeklyScheduleRequest.findOneAndUpdate(
-      { user: req.user.id, weekStart, status: "pending" },
-      { user: req.user.id, weekStart, shifts, note },
+      { user: req.user.id, weekStart },
+      { user: req.user.id, weekStart, shifts, note, status: "pending", adminNote: "", reviewedAt: null },
       { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
     );
     res.status(201).json(request);
@@ -181,27 +181,6 @@ router.post("/checkout", upload.array("images", 6), async (req, res, next) => {
     if (date !== todayString()) {
       return res.status(400).json({ message: "Chỉ được checkout cho ngày hôm nay" });
     }
-    const [user, schedules] = await Promise.all([
-      User.findById(req.user.id).select("position"),
-      WorkSchedule.find({ user: req.user.id, date, status: "scheduled" }).lean(),
-    ]);
-
-    if (!schedules.length) {
-      return res.status(400).json({ message: "Bạn không có lịch làm trong ngày này" });
-    }
-
-    const latestShiftEnd = schedules
-      .map((schedule) => shiftEndDateTime(date, user?.position, schedule.shift))
-      .filter(Boolean)
-      .sort((a, b) => b.getTime() - a.getTime())[0];
-    const checkoutOpenAt = new Date(latestShiftEnd.getTime() - 10 * 60 * 1000);
-    const now = new Date();
-
-    if (now < checkoutOpenAt) {
-      return res.status(403).json({
-        message: `Chỉ được checkout từ ${checkoutOpenAt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Ho_Chi_Minh" })}, trước giờ kết ca 10 phút`,
-      });
-    }
 
     const imagePaths = await uploadImages(req.files || []);
     const update = {
@@ -233,6 +212,54 @@ router.get("/service-expenses", async (req, res, next) => {
     }
     const expenses = await ServiceExpense.find(filters).sort({ date: -1, createdAt: -1 });
     res.json(expenses);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/overtime", async (req, res, next) => {
+  try {
+    const filters = { user: req.user.id };
+    if (req.query.month && req.query.year) {
+      filters.month = Number(req.query.month);
+      filters.year = Number(req.query.year);
+    }
+    const records = await OvertimeRecord.find(filters).sort({ date: -1, createdAt: -1 });
+    res.json(records);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/overtime", async (req, res, next) => {
+  try {
+    const date = String(req.body.date || "").trim();
+    const hours = Number(req.body.hours);
+    const note = String(req.body.note || "").trim();
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(hours) || hours <= 0) {
+      return res.status(400).json({ message: "Vui lòng nhập ngày tăng ca và số giờ hợp lệ" });
+    }
+
+    const user = await User.findOne({ _id: req.user.id, role: "user", active: true }).select("hourlyRate");
+    if (!user) return res.status(404).json({ message: "Không tìm thấy nhân sự" });
+
+    const [year, month] = date.split("-").map(Number);
+    const hourlyRate = Number(user.hourlyRate || 30000);
+    const record = await OvertimeRecord.create({
+      user: user._id,
+      date,
+      month,
+      year,
+      hours,
+      hourlyRate,
+      amount: hours * hourlyRate,
+      status: "pending",
+      note,
+      createdBy: req.user.id,
+    });
+
+    res.status(201).json(record);
   } catch (error) {
     next(error);
   }

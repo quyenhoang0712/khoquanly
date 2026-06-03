@@ -49,6 +49,7 @@ export default function UserSalary() {
         <article className="stat-card"><div><span>Số ca đã làm</span><strong>{formatNumber(salary?.totalShifts || 0)}</strong></div></article>
         <article className="stat-card"><div><span>Tổng giờ</span><strong>{formatNumber(salary?.totalHours || 0)}</strong></div></article>
         <article className="stat-card"><div><span>Tăng ca</span><strong>{formatNumber(salary?.overtimeHours || 0)} giờ</strong></div></article>
+        <article className="stat-card"><div><span>Phí đi lại</span><strong>{formatCurrency(salary?.travelAllowance || 0)}</strong></div></article>
         <article className="stat-card"><div><span>Tổng lương</span><strong>{formatCurrency(salary?.totalSalary || 0)}</strong></div></article>
       </div>
 
@@ -57,7 +58,7 @@ export default function UserSalary() {
           <table>
             <thead>
               <tr>
-                <th>Tăng ca</th>
+                <th>Ngày tăng ca</th>
                 <th>Giờ</th>
                 <th>Đơn giá</th>
                 <th>Tiền tăng ca</th>
@@ -67,7 +68,7 @@ export default function UserSalary() {
             <tbody>
               {salary.overtimeRecords.map((item) => (
                 <tr key={item._id}>
-                  <td data-label="Tăng ca">Tháng {item.month}/{item.year}</td>
+                  <td data-label="Ngày tăng ca">{item.date ? formatDate(item.date) : `Tháng ${item.month}/${item.year}`}</td>
                   <td data-label="Giờ">{formatNumber(item.hours)}</td>
                   <td data-label="Đơn giá">{formatCurrency(item.hourlyRate)}</td>
                   <td data-label="Tiền tăng ca">{formatCurrency(item.amount)}</td>

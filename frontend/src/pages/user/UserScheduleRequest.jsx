@@ -68,7 +68,7 @@ export default function UserScheduleRequest() {
   const currentRequest = useMemo(() => {
     return requests.find((item) => item.status === "pending") || requests[0] || null;
   }, [requests]);
-  const canEditRequest = canRegister && (!currentRequest || currentRequest.status !== "approved");
+  const canEditRequest = canRegister;
 
   const loadRequests = () => {
     setLoadingRequests(true);
@@ -104,12 +104,6 @@ export default function UserScheduleRequest() {
   const submit = async (event) => {
     event.preventDefault();
     if (submittingRef.current) return;
-    if (!canEditRequest) {
-      setError("Lịch đã được duyệt nên không thể sửa.");
-      setMessage("");
-      return;
-    }
-
     const shifts = weekDays.flatMap((day) => optionToShifts(day.date, choices[day.date]));
 
     if (shifts.length === 0) {
@@ -176,7 +170,7 @@ export default function UserScheduleRequest() {
       <div className="panel form-panel">
         <form className="product-form" onSubmit={submit}>
           {currentRequest?.status === "approved" && (
-            <div className="alert warning">Lịch này đã được duyệt. Bạn có thể xem lại nhưng không sửa được.</div>
+            <div className="alert warning">Lịch này đã được duyệt. Tạm thời vẫn cho sửa để test, gửi lại sẽ chuyển về chờ duyệt.</div>
           )}
 
           <div className="week-summary">

@@ -35,6 +35,7 @@ const userItems = [
   { to: "/user/schedule-request", label: "Đăng ký ngày làm", icon: ClipboardCheck },
   { to: "/user/tasks", label: "Việc hôm nay", icon: ClipboardCheck },
   { to: "/user/service-expenses", label: " Phí dịch vụ", icon: ReceiptText },
+  { to: "/user/overtime", label: "Tăng ca", icon: Clock3 },
   { to: "/user/checkout", label: "Checkout", icon: Clock },
   { to: "/user/salary", label: "Lương của tôi", icon: ReceiptText },
   { to: "/user/rules", label: "Nội quy", icon: FileText },

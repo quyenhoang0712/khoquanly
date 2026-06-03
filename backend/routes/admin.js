@@ -15,7 +15,7 @@ const { todayString } = require("../utils/date");
 
 const router = express.Router();
 
-const populateUser = { path: "user", select: "name email role position active" };
+const populateUser = { path: "user", select: "name email role position active hourlyRate" };
 const populateAssigned = { path: "assignedTo", select: "name email" };
 
 const requestOrigin = (req) => {
@@ -1032,6 +1032,7 @@ router.get("/service-expenses", async (req, res, next) => {
 router.post("/overtime", async (req, res, next) => {
   try {
     const userId = req.body.userId;
+    const date = String(req.body.date || "").trim();
     const month = Number(req.body.month);
     const year = Number(req.body.year);
     const hours = Number(req.body.hours);
@@ -1047,11 +1048,15 @@ router.post("/overtime", async (req, res, next) => {
     const hourlyRate = Number(user.hourlyRate || 30000);
     const record = await OvertimeRecord.create({
       user: user._id,
+      date,
       month,
       year,
       hours,
       hourlyRate,
       amount: hours * hourlyRate,
+      status: "approved",
+      reviewedAt: new Date(),
+      reviewedBy: req.user.id,
       note,
       createdBy: req.user.id,
     });
@@ -1065,6 +1070,7 @@ router.post("/overtime", async (req, res, next) => {
 router.put("/overtime/:id", async (req, res, next) => {
   try {
     const userId = req.body.userId;
+    const date = String(req.body.date || "").trim();
     const hours = Number(req.body.hours);
     const note = String(req.body.note || "").trim();
 
@@ -1080,6 +1086,7 @@ router.put("/overtime/:id", async (req, res, next) => {
       req.params.id,
       {
         user: user._id,
+        ...(date ? { date } : {}),
         hours,
         hourlyRate,
         amount: hours * hourlyRate,
@@ -1090,6 +1097,33 @@ router.put("/overtime/:id", async (req, res, next) => {
 
     if (!record) return res.status(404).json({ message: "Không tìm thấy tăng ca" });
     res.json(record);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/overtime/:id/review", async (req, res, next) => {
+  try {
+    const action = String(req.body.action || "").trim();
+    const adminNote = String(req.body.adminNote || "").trim();
+    if (!["approved", "rejected"].includes(action)) {
+      return res.status(400).json({ message: "Trạng thái duyệt tăng ca không hợp lệ" });
+    }
+
+    const record = await OvertimeRecord.findById(req.params.id).populate(populateUser);
+    if (!record) return res.status(404).json({ message: "Không tìm thấy phiếu tăng ca" });
+    if (!record.user || record.user.active === false) return res.status(404).json({ message: "Nhân viên không còn hoạt động" });
+
+    const hourlyRate = Number(record.user.hourlyRate || record.hourlyRate || 30000);
+    record.hourlyRate = hourlyRate;
+    record.amount = action === "approved" ? Number(record.hours || 0) * hourlyRate : 0;
+    record.status = action;
+    record.adminNote = adminNote;
+    record.reviewedAt = new Date();
+    record.reviewedBy = req.user.id;
+    await record.save();
+
+    res.json(await record.populate(populateUser));
   } catch (error) {
     next(error);
   }

@@ -152,6 +152,9 @@ export const api = {
   async deleteAdminOvertime(id) {
     return parseResponse(await request(`${API_BASE_URL}/admin/overtime/${id}`, { method: "DELETE" }));
   },
+  async reviewAdminOvertime(id, payload) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/overtime/${id}/review`, jsonOptions("PUT", payload)));
+  },
   async getAdminSalaryDetail(userId, params) {
     return parseResponse(await request(`${API_BASE_URL}/admin/salaries/${userId}${query(params)}`));
   },
@@ -194,6 +197,12 @@ export const api = {
   },
   async createServiceExpense(payload) {
     return parseResponse(await request(`${API_BASE_URL}/user/service-expenses`, jsonOptions("POST", payload)));
+  },
+  async getMyOvertime(params) {
+    return parseResponse(await request(`${API_BASE_URL}/user/overtime${query(params)}`));
+  },
+  async createOvertimeRequest(payload) {
+    return parseResponse(await request(`${API_BASE_URL}/user/overtime`, jsonOptions("POST", payload)));
   },
   async getMySalary(params) {
     return parseResponse(await request(`${API_BASE_URL}/user/my-salary${query(params)}`));

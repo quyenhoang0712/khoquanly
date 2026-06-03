@@ -1,9 +1,33 @@
-import { CheckCircle2, CircleDashed, ClipboardList, LoaderCircle } from "lucide-react";
+import { Camera, CheckCircle2, CircleDashed, ClipboardList, LoaderCircle, MapPin, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, authStorage } from "../../api";
 import { Alert, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
 import { formatDate, formatNumber, statusLabels, today } from "../../utils/workforce";
+
+const MAX_REPORT_IMAGES = 6;
+
+const reportStamp = (date = new Date()) =>
+  `${new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(date)} at ${date.toLocaleTimeString("vi-VN", { hour12: false })}`;
+
+const wrapText = (context, text, maxWidth) => {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let current = "";
+
+  words.forEach((word) => {
+    const next = current ? `${current} ${word}` : word;
+    if (context.measureText(next).width <= maxWidth || !current) {
+      current = next;
+      return;
+    }
+    lines.push(current);
+    current = word;
+  });
+
+  if (current) lines.push(current);
+  return lines;
+};
 
 export default function UserTasks() {
   const currentUser = authStorage.getUser();
@@ -13,10 +37,19 @@ export default function UserTasks() {
   const [status, setStatus] = useState("not-started");
   const [content, setContent] = useState("");
   const [files, setFiles] = useState([]);
+  const [reportShots, setReportShots] = useState([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [now, setNow] = useState(new Date());
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraLoading, setCameraLoading] = useState(false);
+  const [captureLoading, setCaptureLoading] = useState(false);
+  const [geoStatus, setGeoStatus] = useState("");
   const [savingStatus, setSavingStatus] = useState(false);
   const [submittingReport, setSubmittingReport] = useState(false);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
   const savingStatusRef = useRef(false);
   const submittingReportRef = useRef(false);
 
@@ -25,6 +58,26 @@ export default function UserTasks() {
   };
 
   useEffect(load, [date]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const stopCamera = () => {
+    streamRef.current?.getTracks?.().forEach((track) => track.stop());
+    streamRef.current = null;
+    setCameraOpen(false);
+    setCaptureLoading(false);
+  };
+
+  useEffect(() => {
+    if (cameraOpen && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  }, [cameraOpen]);
+
+  useEffect(() => () => stopCamera(), []);
 
   const getUserId = (value) => String(value?._id || value?.id || value || "");
   const getStatus = (task) => {
@@ -65,8 +118,15 @@ export default function UserTasks() {
     setStatus(taskStatus === "completed" ? "completed" : "in-progress");
     setContent("");
     setFiles([]);
+    setReportShots([]);
+    stopCamera();
     setError("");
     setMessage("");
+  };
+
+  const closeTask = () => {
+    stopCamera();
+    setSelectedTask(null);
   };
 
   const saveStatus = async () => {
@@ -111,13 +171,151 @@ export default function UserTasks() {
       setMessage("Đã ghi nhận.");
       setContent("");
       setFiles([]);
-      setSelectedTask(null);
+      setReportShots([]);
+      closeTask();
     } catch (err) {
       setError(err.message);
     } finally {
       submittingReportRef.current = false;
       setSubmittingReport(false);
     }
+  };
+
+  const readLocation = async () => {
+    if (!navigator.geolocation) return "Không lấy được vị trí";
+
+    setGeoStatus("Đang lấy vị trí...");
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+      });
+      const { latitude, longitude } = position.coords;
+      const fallback = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&accept-language=vi`);
+        const data = await response.json();
+        const address = data.address || {};
+        const lines = [
+          address.road || data.name,
+          address.suburb || address.city_district || address.town || address.city,
+          address.city || address.state,
+          address.country,
+        ].filter(Boolean);
+        const label = lines.length ? [...new Set(lines)].join(", ") : data.display_name || fallback;
+        setGeoStatus(label);
+        return label;
+      } catch {
+        setGeoStatus(fallback);
+        return fallback;
+      }
+    } catch {
+      setGeoStatus("Không lấy được vị trí");
+      return "Không lấy được vị trí";
+    }
+  };
+
+  const openCamera = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError("Trình duyệt này không hỗ trợ camera.");
+      return;
+    }
+
+    try {
+      setError("");
+      setCameraLoading(true);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      setCameraOpen(true);
+    } catch {
+      setError("Không mở được camera. Hãy cấp quyền camera để chụp ảnh báo cáo.");
+    } finally {
+      setCameraLoading(false);
+    }
+  };
+
+  const drawStampedPhoto = async () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return null;
+
+    const width = video.videoWidth || 1280;
+    const height = video.videoHeight || 720;
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+    context.drawImage(video, 0, 0, width, height);
+
+    const location = await readLocation();
+    const stampLines = [reportStamp(new Date()), selectedTask?.title || "Báo cáo công việc", ...String(location).split(",").map((line) => line.trim()).filter(Boolean)];
+    const fontSize = Math.max(26, Math.round(width * 0.04));
+    const lineHeight = Math.round(fontSize * 1.2);
+    const padding = Math.round(width * 0.04);
+    const maxTextWidth = Math.round(width * 0.72);
+
+    context.textAlign = "right";
+    context.textBaseline = "top";
+    context.font = `600 ${fontSize}px Arial, sans-serif`;
+
+    const lines = stampLines.flatMap((line) => wrapText(context, line, maxTextWidth));
+    const blockHeight = lines.length * lineHeight;
+    const x = width - padding;
+    const y = Math.max(padding, Math.round((height - blockHeight) * 0.16));
+
+    lines.forEach((line, index) => {
+      const lineY = y + index * lineHeight;
+      context.lineWidth = Math.max(4, Math.round(fontSize * 0.12));
+      context.strokeStyle = "rgba(15, 23, 42, 0.45)";
+      context.strokeText(line, x, lineY);
+      context.fillStyle = "rgba(255, 255, 255, 0.94)";
+      context.fillText(line, x, lineY);
+    });
+
+    return new Promise((resolve) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve(null);
+            return;
+          }
+          const fileName = `task-report-${Date.now()}.jpg`;
+          resolve({
+            file: new File([blob], fileName, { type: "image/jpeg" }),
+            preview: canvas.toDataURL("image/jpeg", 0.86),
+          });
+        },
+        "image/jpeg",
+        0.9
+      );
+    });
+  };
+
+  const capturePhoto = async () => {
+    if (files.length >= MAX_REPORT_IMAGES) {
+      setError(`Chỉ được gửi tối đa ${MAX_REPORT_IMAGES} ảnh.`);
+      return;
+    }
+
+    setCaptureLoading(true);
+    const photo = await drawStampedPhoto();
+    setCaptureLoading(false);
+    if (!photo) {
+      setError("Không chụp được ảnh. Hãy thử lại.");
+      return;
+    }
+
+    setError("");
+    setFiles((current) => [...current, photo.file].slice(0, MAX_REPORT_IMAGES));
+    setReportShots((current) => [...current, { name: photo.file.name, preview: photo.preview }].slice(0, MAX_REPORT_IMAGES));
+  };
+
+  const removeFile = (index) => {
+    setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    setReportShots((current) => current.filter((shot) => files[index]?.name !== shot.name));
   };
 
   return (
@@ -179,7 +377,7 @@ export default function UserTasks() {
       </div>
 
       {selectedTask && (
-        <Modal title={selectedTask.title} onClose={() => setSelectedTask(null)}>
+        <Modal title={selectedTask.title} onClose={closeTask}>
           <div className="task-modal-content">
           <div className="detail-grid compact">
             <div><span>Ngày</span><strong>{formatDate(selectedTask.date)}</strong></div>
@@ -209,15 +407,33 @@ export default function UserTasks() {
             </label>
             <label className="field upload-field">
               <span>Ảnh báo cáo</span>
-              <input id="task-report-images" type="file" multiple accept="image/*" onChange={(event) => setFiles(Array.from(event.target.files))} />
-              <label className="upload-box" htmlFor="task-report-images">
-                <strong>Chọn ảnh báo cáo</strong>
-                <small>{files.length ? `${files.length} ảnh đã chọn` : "PNG, JPG hoặc ảnh chụp màn hình"}</small>
-              </label>
+              <div className="checkout-camera-actions">
+                <button className="button primary" type="button" onClick={openCamera} disabled={cameraLoading || files.length >= MAX_REPORT_IMAGES}>
+                  <Camera size={18} />
+                  {cameraLoading ? "Đang mở camera..." : "Chụp ảnh báo cáo"}
+                </button>
+              </div>
+              <canvas ref={canvasRef} className="checkout-canvas" />
+              <div className="upload-box">
+                <strong>{files.length ? `${files.length}/${MAX_REPORT_IMAGES} ảnh đã chụp` : "Chưa có ảnh báo cáo"}</strong>
+                <small>Chỉ chụp trực tiếp bằng camera để tự đóng dấu ngày giờ và vị trí</small>
+              </div>
+              {reportShots.length > 0 && (
+                <div className="checkout-captured-grid">
+                  {reportShots.map((shot) => (
+                    <img key={shot.name} src={shot.preview} alt="Ảnh báo cáo đã đóng dấu" />
+                  ))}
+                </div>
+              )}
               {files.length > 0 && (
                 <div className="selected-files">
-                  {files.map((file) => (
-                    <span key={`${file.name}-${file.size}`}>{file.name}</span>
+                  {files.map((file, index) => (
+                    <span key={`${file.name}-${file.size}`}>
+                      {file.name}
+                      <button type="button" onClick={() => removeFile(index)} aria-label={`Xóa ${file.name}`}>
+                        <X size={12} />
+                      </button>
+                    </span>
                   ))}
                 </div>
               )}
@@ -226,6 +442,33 @@ export default function UserTasks() {
               {submittingReport ? "Đang gửi..." : "Gửi báo cáo"}
             </button>
           </form>
+          </div>
+        </Modal>
+      )}
+
+      {cameraOpen && (
+        <Modal title="Chụp ảnh báo cáo" onClose={stopCamera} className="checkout-camera-modal">
+          <button className="checkout-camera-view checkout-camera-shutter" type="button" onClick={capturePhoto} disabled={captureLoading || files.length >= MAX_REPORT_IMAGES}>
+            <video ref={videoRef} autoPlay playsInline muted />
+            <div className="checkout-camera-time">{reportStamp(now)}</div>
+            <div className="checkout-camera-badge">
+              <MapPin size={16} />
+              <span>{geoStatus || "Ảnh sẽ tự đóng dấu ngày giờ và vị trí"}</span>
+            </div>
+            <div className="checkout-shutter-hint">
+              <Camera size={22} />
+              <span>{captureLoading ? "Đang chụp..." : files.length >= MAX_REPORT_IMAGES ? `Đã đủ ${MAX_REPORT_IMAGES} ảnh` : "Bấm vào ảnh để chụp"}</span>
+            </div>
+          </button>
+          <div className="checkout-camera-modal-actions">
+            <button className="button primary" type="button" onClick={capturePhoto} disabled={captureLoading || files.length >= MAX_REPORT_IMAGES}>
+              <Camera size={18} />
+              {captureLoading ? "Đang chụp..." : "Chụp ảnh"}
+            </button>
+            <button className="button ghost" type="button" onClick={stopCamera}>
+              <X size={18} />
+              Đóng
+            </button>
           </div>
         </Modal>
       )}

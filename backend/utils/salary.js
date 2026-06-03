@@ -7,12 +7,19 @@ const { shiftHours } = require("./shifts");
 
 const HOURS_PER_SHIFT = 4;
 const HOURLY_RATE = 30000;
+const TRAVEL_ALLOWANCE = 150000;
+
+const addOneMonth = (dateString) => {
+  const date = new Date(`${dateString}T00:00:00+07:00`);
+  date.setMonth(date.getMonth() + 1);
+  return date;
+};
 
 const calculateSalary = async (userId, month, year) => {
   const { start, end } = salaryPeriodRange(month, year);
 
-  const [user, schedules, checkouts, overtimeRecords] = await Promise.all([
-    User.findById(userId).select("hourlyRate position").lean(),
+  const [user, schedules, checkouts, overtimeRecords, firstSchedule] = await Promise.all([
+    User.findById(userId).select("hourlyRate position createdAt").lean(),
     WorkSchedule.find({
       user: userId,
       status: "scheduled",
@@ -22,7 +29,13 @@ const calculateSalary = async (userId, month, year) => {
       user: userId,
       date: { $gte: start, $lte: end },
     }).lean(),
-    OvertimeRecord.find({ user: userId, month, year }).sort({ createdAt: 1 }).lean(),
+    OvertimeRecord.find({
+      user: userId,
+      month,
+      year,
+      $or: [{ status: "approved" }, { status: { $exists: false } }],
+    }).sort({ date: 1, createdAt: 1 }).lean(),
+    WorkSchedule.findOne({ user: userId, status: "scheduled" }).sort({ date: 1 }).select("date").lean(),
   ]);
   const hourlyRate = Number(user?.hourlyRate || HOURLY_RATE);
 
@@ -54,7 +67,10 @@ const calculateSalary = async (userId, month, year) => {
   const overtimeHours = overtimeRecords.reduce((sum, item) => sum + Number(item.hours || 0), 0);
   const overtimeSalary = overtimeRecords.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const totalHours = regularHours + overtimeHours;
-  const totalSalary = regularSalary + overtimeSalary;
+  const employmentStartDate = firstSchedule?.date || (user?.createdAt ? user.createdAt.toISOString().slice(0, 10) : null);
+  const travelAllowanceEligible = Boolean(employmentStartDate && addOneMonth(employmentStartDate) <= new Date(`${end}T23:59:59+07:00`));
+  const travelAllowance = travelAllowanceEligible && totalShifts > 0 ? TRAVEL_ALLOWANCE : 0;
+  const totalSalary = regularSalary + overtimeSalary + travelAllowance;
 
   return {
     periodStart: start,
@@ -65,6 +81,9 @@ const calculateSalary = async (userId, month, year) => {
     regularSalary,
     overtimeHours,
     overtimeSalary,
+    employmentStartDate,
+    travelAllowanceEligible,
+    travelAllowance,
     totalHours,
     totalSalary,
     overtimeRecords,
@@ -72,4 +91,4 @@ const calculateSalary = async (userId, month, year) => {
   };
 };
 
-module.exports = { calculateSalary, HOURS_PER_SHIFT, HOURLY_RATE };
+module.exports = { calculateSalary, HOURS_PER_SHIFT, HOURLY_RATE, TRAVEL_ALLOWANCE };

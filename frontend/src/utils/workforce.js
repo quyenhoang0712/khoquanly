@@ -61,7 +61,11 @@ const toLocalDateString = (date) => {
   return `${date.getFullYear()}-${month}-${day}`;
 };
 
-export const formatDate = (value) => (value ? new Date(value).toLocaleDateString("vi-VN") : "-");
+export const formatDate = (value) => {
+  if (!value) return "-";
+  const date = typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00`) : new Date(value);
+  return date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+};
 export const today = () => toLocalDateString(new Date());
 
 export const formatCurrency = (value) =>
