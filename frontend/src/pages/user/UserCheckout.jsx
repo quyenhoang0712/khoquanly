@@ -96,8 +96,13 @@ export default function UserCheckout() {
     setGeoStatus("Đang lấy vị trí...");
     try {
       const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
-      });
+        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 18000, maximumAge: 120000 });
+      }).catch(
+        () =>
+          new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: false, timeout: 20000, maximumAge: 300000 });
+          })
+      );
       const { latitude, longitude } = position.coords;
       const fallback = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
 
@@ -119,8 +124,9 @@ export default function UserCheckout() {
         return fallback;
       }
     } catch {
-      setGeoStatus("Không lấy được vị trí");
-      return "Không lấy được vị trí";
+      const message = "Không lấy được vị trí - mở Safari/Chrome và bật quyền vị trí";
+      setGeoStatus(message);
+      return message;
     }
   };
 
@@ -139,6 +145,7 @@ export default function UserCheckout() {
       });
       streamRef.current = stream;
       setCameraOpen(true);
+      readLocation();
     } catch {
       setError("Không mở được camera. Hãy cấp quyền camera hoặc chọn ảnh từ máy.");
     } finally {
