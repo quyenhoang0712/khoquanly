@@ -10,6 +10,7 @@ const User = require("../models/User");
 const WeeklyScheduleRequest = require("../models/WeeklyScheduleRequest");
 const WorkSchedule = require("../models/WorkSchedule");
 const seedDefaults = require("../seed");
+const { hashPassword } = require("../utils/password");
 
 const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/warehouse-management";
 const DEMO_EMAILS = ["nv1@gmail.com", "nv2@gmail.com", "nv3@gmail.com", "sale1@gmail.com", "sale2@gmail.com"];
@@ -47,7 +48,7 @@ const upsertDemoUsers = async () => {
         {
           $set: {
             ...user,
-            password: "123456",
+            password: hashPassword("123456"),
             role: "user",
             active: true,
           },
@@ -209,7 +210,7 @@ const run = async () => {
   await seedScheduleRequests(users, today);
 
   console.log("Demo seed completed.");
-  console.log("Admin:", process.env.ADMIN_EMAIL || "admin@warehouse.com", "/", process.env.ADMIN_PASSWORD || "admin123");
+  console.log("Admin:", process.env.ADMIN_EMAIL || "admin@warehouse.com", "/", process.env.ADMIN_PASSWORD || "<ADMIN_PASSWORD>");
   console.log("Users:", DEMO_EMAILS.map((email) => `${email} / 123456`).join(", "));
   await mongoose.disconnect();
 };

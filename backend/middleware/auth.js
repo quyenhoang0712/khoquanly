@@ -1,8 +1,10 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+const { getJwtSecret } = require("../utils/env");
 
-const JWT_SECRET = process.env.JWT_SECRET || "warehouse-admin-secret";
+const JWT_SECRET = getJwtSecret();
 
-const requireAuth = (req, res, next) => {
+const requireAuth = async (req, res, next) => {
   const authHeader = req.headers.authorization || "";
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
 
@@ -12,7 +14,18 @@ const requireAuth = (req, res, next) => {
 
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    req.user = payload;
+    const user = await User.findOne({ _id: payload.id, active: true }).select("_id email name role position hourlyRate");
+    if (!user) {
+      return res.status(401).json({ message: "Invalid or expired token" });
+    }
+    req.user = {
+      id: String(user._id),
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      position: user.position,
+      hourlyRate: user.hourlyRate,
+    };
     next();
   } catch (error) {
     return res.status(401).json({ message: "Invalid or expired token" });

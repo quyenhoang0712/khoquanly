@@ -1,5 +1,6 @@
 import { Clock3, Plus, ReceiptText, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../../api";
 import { Alert, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
@@ -7,8 +8,10 @@ import { formatCurrency, formatDate, formatNumber } from "../../utils/workforce"
 
 export default function AdminOvertime() {
   const now = new Date();
-  const [month, setMonth] = useState(now.getMonth() + 1);
-  const [year, setYear] = useState(now.getFullYear());
+  const [searchParams] = useSearchParams();
+  const [month, setMonth] = useState(Number(searchParams.get("month")) || now.getMonth() + 1);
+  const [year, setYear] = useState(Number(searchParams.get("year")) || now.getFullYear());
+  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") === "pending" ? "pending" : "");
   const [rows, setRows] = useState([]);
   const [users, setUsers] = useState([]);
   const [open, setOpen] = useState(false);
@@ -32,6 +35,10 @@ export default function AdminOvertime() {
       ),
     [rows]
   );
+  const visibleRows = useMemo(() => {
+    if (!statusFilter) return rows;
+    return rows.filter((row) => (row.status || "approved") === statusFilter);
+  }, [rows, statusFilter]);
 
   const load = async () => {
     try {
@@ -131,6 +138,13 @@ export default function AdminOvertime() {
           <span>Năm</span>
           <input type="number" value={year} onChange={(event) => setYear(Number(event.target.value))} />
         </label>
+        <label className="field inline-field">
+          <span>Trạng thái</span>
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+            <option value="">Tất cả</option>
+            <option value="pending">Chờ duyệt</option>
+          </select>
+        </label>
       </div>
 
       <div className="stats-grid">
@@ -142,8 +156,8 @@ export default function AdminOvertime() {
       </div>
 
       <div className="task-board-grid">
-        {rows.length === 0 && <div className="panel task-board-empty">Chưa có tăng ca trong tháng này.</div>}
-        {rows.map((row) => (
+        {visibleRows.length === 0 && <div className="panel task-board-empty">Chưa có tăng ca trong tháng này.</div>}
+        {visibleRows.map((row) => (
           <article className="task-board-card" key={row._id}>
             <div className="task-board-card-header">
               <div>

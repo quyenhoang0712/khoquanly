@@ -1,5 +1,6 @@
 import { Camera, CheckCircle2, CircleDashed, ClipboardList, LoaderCircle, MapPin, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api, authStorage } from "../../api";
 import { Alert, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
@@ -31,7 +32,9 @@ const wrapText = (context, text, maxWidth) => {
 
 export default function UserTasks() {
   const currentUser = authStorage.getUser();
-  const [date, setDate] = useState(today());
+  const [searchParams] = useSearchParams();
+  const [date, setDate] = useState(searchParams.get("date") || today());
+  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") === "unfinished" ? "unfinished" : "");
   const [rows, setRows] = useState([]);
   const [selectedTask, setSelectedTask] = useState(null);
   const [status, setStatus] = useState("not-started");
@@ -102,6 +105,10 @@ export default function UserTasks() {
     ["Đang làm", summary.inProgress, LoaderCircle, "amber"],
     ["Đã xong", summary.completed, CheckCircle2, "green"],
   ];
+  const visibleRows = useMemo(() => {
+    if (statusFilter !== "unfinished") return rows;
+    return rows.filter((row) => getStatus(row) !== "completed");
+  }, [rows, statusFilter]);
 
   const replaceTask = (updatedTask) => {
     setRows((currentRows) => currentRows.map((row) => (row._id === updatedTask._id ? updatedTask : row)));
@@ -352,10 +359,14 @@ export default function UserTasks() {
 
       <div className="toolbar date-filter">
         <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+          <option value="">Tất cả trạng thái</option>
+          <option value="unfinished">Chưa/đang làm</option>
+        </select>
       </div>
       <div className="task-board-grid">
-        {rows.length === 0 && <div className="panel task-board-empty">Không có dữ liệu.</div>}
-        {rows.map((row) => (
+        {visibleRows.length === 0 && <div className="panel task-board-empty">Không có dữ liệu.</div>}
+        {visibleRows.map((row) => (
           <article className="task-board-card" key={row._id}>
             <div className="task-board-card-header">
               <div>

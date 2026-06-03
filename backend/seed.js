@@ -1,6 +1,8 @@
 const Role = require("./models/Role");
 const User = require("./models/User");
 const WorkRule = require("./models/WorkRule");
+const { getRequiredEnv } = require("./utils/env");
+const { hashPassword } = require("./utils/password");
 
 const defaultWorkRules = [
   {
@@ -49,20 +51,17 @@ const seedDefaults = async () => {
 
   const adminEmail = process.env.ADMIN_EMAIL || "admin@warehouse.com";
 
-  await User.updateOne(
-    { email: adminEmail },
-    {
-      $set: {
-        name: "Admin",
-        email: adminEmail,
-        password: process.env.ADMIN_PASSWORD || "admin123",
-        role: "admin",
-        hourlyRate: 30000,
-        active: true,
-      },
-    },
-    { upsert: true }
-  );
+  const adminPassword = getRequiredEnv("ADMIN_PASSWORD");
+  const adminUpdate = {
+    name: "Admin",
+    email: adminEmail,
+    password: hashPassword(adminPassword),
+    role: "admin",
+    position: "warehouse",
+    hourlyRate: 30000,
+    active: true,
+  };
+  await User.updateOne({ email: adminEmail }, { $set: adminUpdate }, { upsert: true });
 
   const ruleCount = await WorkRule.countDocuments();
   if (ruleCount === 0) {

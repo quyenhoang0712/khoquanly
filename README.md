@@ -38,6 +38,18 @@ Backend chạy tại:
 http://localhost:5001
 ```
 
+Trong `backend/.env`, cần cấu hình tối thiểu:
+
+```text
+MONGO_URI=
+CLIENT_URL=
+JWT_SECRET=
+ADMIN_EMAIL=
+ADMIN_PASSWORD=
+```
+
+`JWT_SECRET` phải là chuỗi ngẫu nhiên mạnh, ít nhất 32 ký tự. `ADMIN_PASSWORD` không nên dùng mật khẩu mặc định khi deploy.
+
 Upload ảnh dùng Cloudinary. Trong `backend/.env`, cần cấu hình:
 
 ```text
@@ -47,6 +59,17 @@ CLOUDINARY_API_SECRET=
 ```
 
 Mongo chỉ lưu URL ảnh Cloudinary trong field `images`, không lưu file ảnh.
+
+Nếu database đang có user cũ lưu mật khẩu dạng plaintext, chạy một lần:
+
+```bash
+cd backend
+npm run migrate:passwords
+```
+
+## Kỳ lương
+
+Bảng lương đang tính theo kỳ cố định 4 tuần: ngày 11 của tháng được chọn đến ngày 8 của tháng sau. Ví dụ kỳ lương tháng 6/2026 là `2026-06-11` đến `2026-07-08`, không phải toàn bộ tháng dương lịch.
 
 ## Chạy frontend
 

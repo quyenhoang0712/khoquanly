@@ -148,6 +148,50 @@ textarea {
   }
 }
 
+@keyframes shellSidebarFlyIn {
+  from {
+    opacity: 0;
+    transform: translate3d(-36px, 0, 0) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes shellContentFlyIn {
+  from {
+    opacity: 0;
+    transform: translate3d(38px, 0, 0) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes shellTopFlyIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes shellPanelFlyIn {
+  from {
+    opacity: 0;
+    transform: translate3d(var(--fly-x, 0), 18px, 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
 @keyframes toastIn {
   from {
     opacity: 0;
@@ -195,6 +239,7 @@ button {
   min-height: 0;
   border-radius: 22px;
   overflow: hidden;
+  animation: shellSidebarFlyIn 0.58s cubic-bezier(0.2, 0.85, 0.2, 1) both;
 }
 
 .sidebar-brand {
@@ -365,6 +410,7 @@ button {
   min-height: 100vh;
   margin-left: 302px;
   padding: 34px;
+  animation: shellContentFlyIn 0.62s 0.08s cubic-bezier(0.2, 0.85, 0.2, 1) both;
 }
 
 .page {
@@ -372,6 +418,32 @@ button {
   max-width: 1240px;
   margin: 0 auto;
   animation: pageFloatIn 0.42s ease both;
+}
+
+.page > .page-header {
+  --fly-x: 28px;
+  animation: shellPanelFlyIn 0.54s 0.18s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+}
+
+.page > .stats-grid,
+.page > .daily-report-grid,
+.page > .toolbar,
+.page > .panel,
+.page > .calendar-card,
+.page > .task-board-grid,
+.page > .checkout-overview,
+.page > .checkout-list,
+.page > .employee-section-list {
+  --fly-x: -24px;
+  animation: shellPanelFlyIn 0.56s 0.24s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+}
+
+.page > .panel:nth-of-type(2),
+.page > .task-board-grid,
+.page > .checkout-list,
+.page > .employee-section-list {
+  --fly-x: 26px;
+  animation-delay: 0.31s;
 }
 
 .top-nav {
@@ -739,6 +811,97 @@ h2 {
 
 .dashboard-report-card .task-board-card-header {
   position: relative;
+}
+
+.dashboard-actions-panel {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 22px;
+  padding: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-actions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--slate-700);
+}
+
+.dashboard-actions-header span,
+.dashboard-action-card span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--slate-500);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.dashboard-actions-header strong {
+  color: var(--slate-900);
+  font-size: 20px;
+}
+
+.dashboard-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dashboard-action-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 126px;
+  padding: 15px;
+  border: 1px solid var(--slate-200);
+  border-radius: 14px;
+  color: inherit;
+  background: var(--slate-50);
+  text-decoration: none;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dashboard-action-card:hover {
+  border-color: rgba(47, 109, 246, 0.34);
+  box-shadow: var(--shadow-xs);
+  transform: translateY(-2px);
+}
+
+.dashboard-action-card strong {
+  display: block;
+  color: var(--slate-900);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.dashboard-action-card p {
+  margin: 8px 0 0;
+  color: var(--slate-600);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.dashboard-action-card.amber {
+  background: var(--amber-soft);
+}
+
+.dashboard-action-card.green {
+  background: var(--green-soft);
+}
+
+.dashboard-action-card.blue {
+  background: var(--blue-soft);
+}
+
+.dashboard-action-card.purple {
+  background: var(--purple-soft);
 }
 
 .daily-report-grid {
@@ -1781,7 +1944,8 @@ tbody tr:hover {
   font-size: 22px;
 }
 
-.checkout-date-card input {
+.checkout-date-card input,
+.checkout-date-card select {
   width: 170px;
   height: 48px;
   padding: 0 12px;
@@ -2331,6 +2495,19 @@ tbody tr:hover {
 .calendar-event.afternoon {
   color: var(--purple);
   background: var(--purple-soft);
+}
+
+.admin-calendar-workers {
+  display: grid;
+  gap: 5px;
+}
+
+.admin-calendar-workers .calendar-event {
+  display: -webkit-box;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.2;
 }
 
 .calendar-event.leave {
@@ -2972,8 +3149,52 @@ tbody tr:hover {
   height: 18px;
 }
 
+.employee-section-list {
+  display: grid;
+  gap: 28px;
+  margin-top: 18px;
+}
+
+.employee-section {
+  display: grid;
+  gap: 14px;
+}
+
+.employee-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 2px;
+}
+
+.employee-section-header h2 {
+  margin: 0;
+  color: var(--slate-900);
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.employee-section-header span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: var(--slate-600);
+  background: var(--slate-100);
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.employee-empty {
+  margin: 0;
+}
+
 .employee-card-grid {
   margin-top: 18px;
+}
+
+.employee-section .employee-card-grid {
+  margin-top: 0;
 }
 
 .employee-card-title {
@@ -3049,6 +3270,12 @@ tbody tr:hover {
   font-size: 24px;
 }
 
+.checkout-date-card select {
+  grid-column: 1 / -1;
+  width: 100%;
+  font-size: 15px;
+}
+
 .report-mini-stats {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -3071,7 +3298,8 @@ tbody tr:hover {
   box-shadow: none;
 }
 
-.toolbar.date-filter input {
+.toolbar.date-filter input,
+.toolbar.date-filter select {
   width: 190px;
   height: 44px;
   padding: 0 12px;
@@ -3496,6 +3724,10 @@ tbody tr:hover {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .dashboard-actions-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .task-board-grid {
     grid-template-columns: 1fr;
   }
@@ -3519,6 +3751,7 @@ tbody tr:hover {
   }
 
   .sidebar {
+    animation: none;
     transform: translateX(calc(-100% - 32px));
     transition: transform 0.2s ease;
   }
@@ -3551,6 +3784,7 @@ tbody tr:hover {
     margin: 0 auto 16px;
     overflow-x: auto;
     padding-bottom: 4px;
+    animation: shellTopFlyIn 0.5s 0.16s cubic-bezier(0.2, 0.85, 0.2, 1) both;
   }
 
   .top-nav-link {
@@ -3608,6 +3842,7 @@ tbody tr:hover {
   .checkout-overview,
   .rules-grid,
   .dashboard-stats,
+  .dashboard-actions-grid,
   .overtime-request-form,
   .form-grid {
     grid-template-columns: 1fr;
@@ -4814,7 +5049,35 @@ tbody tr:hover {
   box-shadow: var(--shadow-xs);
 }
 
+.dashboard-mode-toggle {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  isolation: isolate;
+}
+
+.dashboard-mode-toggle::before {
+  position: absolute;
+  z-index: 0;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 12px) / 2);
+  border-radius: 10px;
+  background: var(--slate-900);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+  content: "";
+  transform: translateX(0);
+  transition: transform 0.28s cubic-bezier(0.2, 0.85, 0.2, 1), box-shadow 0.28s ease;
+}
+
+.dashboard-mode-toggle.week-active::before {
+  transform: translateX(calc(100% + 4px));
+}
+
 .segmented-control button {
+  position: relative;
+  z-index: 1;
   min-height: 36px;
   padding: 0 14px;
   border: 0;
@@ -4824,11 +5087,21 @@ tbody tr:hover {
   font-size: 14px;
   font-weight: 900;
   cursor: pointer;
+  transition: color 0.22s ease, transform 0.22s ease;
 }
 
 .segmented-control button.active {
   color: var(--white);
-  background: var(--slate-900);
+  background: transparent;
+}
+
+.dashboard-mode-toggle button:active {
+  transform: scale(0.97);
+}
+
+.dashboard-mode-toggle button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 
 .toolbar.search-filter input {

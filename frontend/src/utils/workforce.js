@@ -74,6 +74,7 @@ export const formatCurrency = (value) =>
 export const formatNumber = (value) => new Intl.NumberFormat("vi-VN").format(Number(value || 0));
 
 export const salaryPeriodRange = (month, year) => {
+  // Payroll is a fixed 4-week period that starts on the 11th of the selected month.
   const startDate = new Date(Number(year), Number(month) - 1, 11);
   const endDate = new Date(startDate);
   endDate.setDate(startDate.getDate() + 27);

@@ -1,5 +1,6 @@
-import { CalendarCheck, CheckCircle2, ClipboardList, FileText, Store, Users, Warehouse } from "lucide-react";
+import { AlertCircle, CalendarCheck, CheckCircle2, ClipboardList, Clock3, FileText, LogOut, Store, Users, Warehouse } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../../api";
 import { Alert } from "../../components/DataState";
 import { formatDate, formatNumber, today } from "../../utils/workforce";
@@ -38,7 +39,7 @@ export default function AdminDashboard() {
       <Alert message={error} />
 
       <div className="toolbar dashboard-toolbar">
-        <div className="segmented-control" role="tablist" aria-label="Chọn kiểu báo cáo">
+        <div className={`segmented-control dashboard-mode-toggle ${mode === "week" ? "week-active" : ""}`} role="tablist" aria-label="Chọn kiểu báo cáo">
           <button className={mode === "day" ? "active" : ""} type="button" onClick={() => setMode("day")}>
             Theo ngày
           </button>
@@ -62,6 +63,8 @@ export default function AdminDashboard() {
           </article>
         ))}
       </div>
+
+      <AdminActionItems data={data} mode={mode} />
 
       <div className="task-board-grid dashboard-report-grid">
         <PositionReportCard
@@ -126,6 +129,81 @@ export default function AdminDashboard() {
       </div>
 
     </section>
+  );
+}
+
+function AdminActionItems({ data, mode }) {
+  const params = new URLSearchParams();
+  if (data?.date) params.set("date", data.date);
+  const month = data?.date ? Number(data.date.slice(5, 7)) : new Date().getMonth() + 1;
+  const year = data?.date ? Number(data.date.slice(0, 4)) : new Date().getFullYear();
+  const missingCheckouts = data?.actionItems?.missingCheckouts || [];
+  const unfinishedTasks = data?.actionItems?.unfinishedTasks || [];
+  const pendingSchedules = data?.actionItems?.pendingSchedules || 0;
+  const pendingOvertime = data?.actionItems?.pendingOvertime || 0;
+  const total = pendingSchedules + pendingOvertime + missingCheckouts.length + unfinishedTasks.length;
+  const label = mode === "week" ? "trong tuần đang xem" : "trong ngày đang xem";
+
+  return (
+    <section className="dashboard-actions-panel">
+      <div className="dashboard-actions-header">
+        <div>
+          <span>Việc cần xử lý</span>
+          <strong>{total ? `${formatNumber(total)} mục cần xem` : "Không có việc tồn đọng"}</strong>
+        </div>
+        <AlertCircle size={22} />
+      </div>
+
+      <div className="dashboard-actions-grid">
+        <ActionCard
+          to="/admin/schedule-requests?status=pending"
+          icon={CalendarCheck}
+          tone="amber"
+          title="Duyệt đăng ký lịch"
+          value={pendingSchedules}
+          detail={pendingSchedules ? "Phiếu lịch đang chờ admin duyệt" : "Không có phiếu lịch chờ duyệt"}
+        />
+        <ActionCard
+          to={`/admin/overtime?month=${month}&year=${year}&status=pending`}
+          icon={Clock3}
+          tone="purple"
+          title="Duyệt tăng ca"
+          value={pendingOvertime}
+          detail={pendingOvertime ? "Phiếu tăng ca đang chờ quyết định" : "Không có tăng ca chờ duyệt"}
+        />
+        <ActionCard
+          to={`/admin/checkouts?${params.toString()}&status=missing`}
+          icon={LogOut}
+          tone="blue"
+          title="Thiếu checkout"
+          value={missingCheckouts.length}
+          detail={missingCheckouts.length ? `${missingCheckouts[0]?.user?.name || "Nhân viên"} chưa checkout ${formatDate(missingCheckouts[0]?.date)}` : `Không thiếu checkout ${label}`}
+        />
+        <ActionCard
+          to={`/admin/tasks?${params.toString()}&status=unfinished`}
+          icon={ClipboardList}
+          tone="green"
+          title="Task chưa xong"
+          value={unfinishedTasks.length}
+          detail={unfinishedTasks.length ? `${unfinishedTasks[0]?.user?.name || "Nhân viên"}: ${unfinishedTasks[0]?.title}` : `Không còn task chưa xong ${label}`}
+        />
+      </div>
+    </section>
+  );
+}
+
+function ActionCard({ to, icon: Icon, tone, title, value, detail }) {
+  return (
+    <Link className={`dashboard-action-card ${tone}`} to={to}>
+      <div className={`stat-icon ${tone}`}>
+        <Icon size={20} />
+      </div>
+      <div>
+        <span>{title}</span>
+        <strong>{formatNumber(value || 0)}</strong>
+        <p>{detail}</p>
+      </div>
+    </Link>
   );
 }
 

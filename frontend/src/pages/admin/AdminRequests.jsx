@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../../api";
 import { Alert, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
@@ -37,9 +38,10 @@ export function AdminScheduleRequests() {
 }
 
 function RequestPage({ title }) {
-  const [position, setPosition] = useState("");
+  const [searchParams] = useSearchParams();
+  const [position, setPosition] = useState(["warehouse", "sale"].includes(searchParams.get("position")) ? searchParams.get("position") : "");
   const [rows, setRows] = useState([]);
-  const [selectedWeek, setSelectedWeek] = useState("");
+  const [selectedWeek, setSelectedWeek] = useState(searchParams.get("weekStart") || "");
   const [autoPlan, setAutoPlan] = useState(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");

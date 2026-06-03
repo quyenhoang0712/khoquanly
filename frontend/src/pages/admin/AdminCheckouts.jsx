@@ -1,12 +1,15 @@
 import { Camera, CheckCircle2, Clock, UserCheck, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../../api";
 import { Alert } from "../../components/DataState";
 import Modal from "../../components/Modal";
 import { assetUrl, formatDate, formatNumber, today } from "../../utils/workforce";
 
 export default function AdminCheckouts() {
-  const [date, setDate] = useState(today());
+  const [searchParams] = useSearchParams();
+  const [date, setDate] = useState(searchParams.get("date") || today());
+  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") === "missing" ? "missing" : "");
   const [checkouts, setCheckouts] = useState([]);
   const [scheduledUsers, setScheduledUsers] = useState([]);
   const [selectedRecord, setSelectedRecord] = useState(null);
@@ -52,11 +55,12 @@ export default function AdminCheckouts() {
 
   const records = useMemo(() => {
     const checkoutByUser = new Map(visibleCheckouts.map((row) => [String(row.user?._id || row.user), row]));
-    return scheduledUsers.map((user) => ({
+    const allRecords = scheduledUsers.map((user) => ({
       user,
       checkout: checkoutByUser.get(String(user._id)) || null,
     }));
-  }, [scheduledUsers, visibleCheckouts]);
+    return statusFilter === "missing" ? allRecords.filter((record) => !record.checkout) : allRecords;
+  }, [scheduledUsers, statusFilter, visibleCheckouts]);
 
   const checkoutTime = (value) => {
     if (!value) return "-";
@@ -80,6 +84,10 @@ export default function AdminCheckouts() {
           <span>ngày xem</span>
           <strong>{formatDate(date)}</strong>
           <input type="date" value={date} onChange={(event) => setDate(event.target.value)} aria-label="Chọn ngày checkout" />
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Lọc trạng thái checkout">
+            <option value="">Tất cả</option>
+            <option value="missing">Chưa checkout</option>
+          </select>
         </div>
         <article className="checkout-summary-card green">
           <CheckCircle2 size={22} />

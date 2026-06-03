@@ -24,7 +24,7 @@ export default function UserSalary() {
         <div>
           <p className="eyebrow">Kỳ lương</p>
           <h1>Lương của tôi</h1>
-          <p className="muted">Tính theo 4 tuần: {periodLabel}</p>
+          <p className="muted">Tính theo kỳ 4 tuần, bắt đầu ngày 11: {periodLabel}</p>
         </div>
       </div>
 

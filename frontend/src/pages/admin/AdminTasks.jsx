@@ -1,12 +1,16 @@
 import { CheckCircle2, CircleDashed, ClipboardList, LoaderCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../../api";
 import { Alert, StatusBadge } from "../../components/DataState";
 import Modal from "../../components/Modal";
 import { assetUrl, formatDate, formatNumber, statusLabels, today } from "../../utils/workforce";
 
 export default function AdminTasks() {
-  const [date, setDate] = useState(today());
+  const [searchParams] = useSearchParams();
+  const initialStatus = searchParams.get("status") || "";
+  const [date, setDate] = useState(searchParams.get("date") || today());
+  const [statusFilter, setStatusFilter] = useState(initialStatus === "unfinished" ? "unfinished" : "");
   const [rows, setRows] = useState([]);
   const [users, setUsers] = useState([]);
   const [open, setOpen] = useState(false);
@@ -34,6 +38,10 @@ export default function AdminTasks() {
     ["Đang làm", summary.inProgress, LoaderCircle, "amber"],
     ["Đã xong", summary.completed, CheckCircle2, "green"],
   ];
+  const visibleRows = useMemo(() => {
+    if (statusFilter !== "unfinished") return rows;
+    return rows.filter((row) => (row.statusByUser || []).some((item) => (item.status || "not-started") !== "completed"));
+  }, [rows, statusFilter]);
 
   const loadTasks = async () => {
     try {
@@ -149,15 +157,19 @@ export default function AdminTasks() {
 
       <div className="toolbar date-filter">
         <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+          <option value="">Tất cả trạng thái</option>
+          <option value="unfinished">Chưa/đang làm</option>
+        </select>
       </div>
 
       <div className="task-board-grid">
-        {rows.length === 0 && (
+        {visibleRows.length === 0 && (
           <div className="panel task-board-empty">
             Không có dữ liệu.
           </div>
         )}
-        {rows.map((row) => (
+        {visibleRows.map((row) => (
           <article className="task-board-card" key={row._id}>
             <div className="task-board-card-header">
               <div>

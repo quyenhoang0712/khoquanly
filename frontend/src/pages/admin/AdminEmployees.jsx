@@ -48,6 +48,22 @@ export default function AdminEmployees() {
     return rows.filter((user) => `${user.name} ${user.email} ${positionLabels[user.position || "warehouse"]}`.toLowerCase().includes(value));
   }, [keyword, rows]);
 
+  const groupedRows = useMemo(
+    () => [
+      {
+        key: "sale",
+        title: "Nhân viên sale",
+        rows: filteredRows.filter((user) => user.position === "sale"),
+      },
+      {
+        key: "warehouse",
+        title: "Nhân viên kho",
+        rows: filteredRows.filter((user) => (user.position || "warehouse") === "warehouse"),
+      },
+    ],
+    [filteredRows]
+  );
+
   const submit = async (event) => {
     event.preventDefault();
     if (loadingRef.current) return;
@@ -154,43 +170,57 @@ export default function AdminEmployees() {
         <input value={keyword} onChange={(event) => setKeyword(event.target.value)} placeholder="Tìm theo tên hoặc email..." />
       </div>
 
-      <div className="task-board-grid employee-card-grid">
+      <div className="employee-section-list">
         {filteredRows.length === 0 && <div className="panel task-board-empty">Chưa có nhân sự.</div>}
-        {filteredRows.map((user) => (
-          <article className="task-board-card employee-card" key={user._id}>
-            <div className="task-board-card-header">
-              <div className="employee-card-title">
-                <span className="employee-avatar">{user.name?.slice(0, 1)?.toUpperCase() || "N"}</span>
-                <div>
-                  <span>Nhân viên</span>
-                  <strong>{user.name}</strong>
-                </div>
-              </div>
-              <div className="row-actions">
-                <button className="button small ghost" type="button" onClick={() => openEdit(user)}>
-                  Sửa
-                </button>
-                <button className="button small danger" type="button" onClick={() => deleteUser(user)}>
-                  Xoá
-                </button>
-              </div>
+        {groupedRows.map((group) => (
+          <section className="employee-section" key={group.key}>
+            <div className="employee-section-header">
+              <h2>{group.title}</h2>
+              <span>{group.rows.length} nhân sự</span>
             </div>
+            {group.rows.length === 0 ? (
+              <div className="panel task-board-empty employee-empty">Chưa có {group.title.toLowerCase()}.</div>
+            ) : (
+              <div className="task-board-grid employee-card-grid">
+                {group.rows.map((user) => (
+                  <article className="task-board-card employee-card" key={user._id}>
+                    <div className="task-board-card-header">
+                      <div className="employee-card-title">
+                        <span className="employee-avatar">{user.name?.slice(0, 1)?.toUpperCase() || "N"}</span>
+                        <div>
+                          <span>Nhân viên</span>
+                          <strong>{user.name}</strong>
+                        </div>
+                      </div>
+                      <div className="row-actions">
+                        <button className="button small ghost" type="button" onClick={() => openEdit(user)}>
+                          Sửa
+                        </button>
+                        <button className="button small danger" type="button" onClick={() => deleteUser(user)}>
+                          Xoá
+                        </button>
+                      </div>
+                    </div>
 
-            <div className="task-board-fields">
-              <div>
-                <span>Email</span>
-                <strong>{user.email}</strong>
+                    <div className="task-board-fields">
+                      <div>
+                        <span>Email</span>
+                        <strong>{user.email}</strong>
+                      </div>
+                      <div>
+                        <span>Chức vụ</span>
+                        <strong>{positionLabels[user.position || "warehouse"]}</strong>
+                      </div>
+                      <div>
+                        <span>Lương giờ</span>
+                        <strong>{formatCurrency(user.hourlyRate)}</strong>
+                      </div>
+                    </div>
+                  </article>
+                ))}
               </div>
-              <div>
-                <span>Chức vụ</span>
-                <strong>{positionLabels[user.position || "warehouse"]}</strong>
-              </div>
-              <div>
-                <span>Lương giờ</span>
-                <strong>{formatCurrency(user.hourlyRate)}</strong>
-              </div>
-            </div>
-          </article>
+            )}
+          </section>
         ))}
       </div>
 

@@ -58,6 +58,17 @@ const summarizeDay = (items) => {
   return { userCount, morningCount, afternoonCount };
 };
 
+const dayNamesByShift = (items) => {
+  const groups = { morning: [], afternoon: [] };
+  items
+    .filter((item) => item.status !== "leave")
+    .forEach((item) => {
+      const name = item.user?.name || "Nhân viên";
+      if (groups[item.shift] && !groups[item.shift].includes(name)) groups[item.shift].push(name);
+    });
+  return groups;
+};
+
 export default function AdminSchedules() {
   const [month, setMonth] = useState(monthKey());
   const [shift, setShift] = useState("");
@@ -185,6 +196,19 @@ export default function AdminSchedules() {
         compact
         renderMeta={(date, items) => {
           if (items.length === 0) return null;
+          if (position) {
+            const names = dayNamesByShift(items);
+            return (
+              <div className="admin-calendar-workers">
+                {names.morning.length > 0 && (
+                  <span className="calendar-event morning">Sáng: {names.morning.join(", ")}</span>
+                )}
+                {names.afternoon.length > 0 && (
+                  <span className="calendar-event afternoon">Chiều: {names.afternoon.join(", ")}</span>
+                )}
+              </div>
+            );
+          }
           const summary = summarizeDay(items);
           return (
             <div className="admin-calendar-summary">

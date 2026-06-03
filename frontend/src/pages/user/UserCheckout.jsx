@@ -1,5 +1,6 @@
 import { Camera, MapPin, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api, authStorage } from "../../api";
 import { Alert } from "../../components/DataState";
 import Modal from "../../components/Modal";
@@ -32,8 +33,9 @@ const wrapText = (context, text, maxWidth) => {
 export default function UserCheckout() {
   const currentUser = authStorage.getUser();
   const position = currentUser?.position || "warehouse";
+  const [searchParams] = useSearchParams();
   const [note, setNote] = useState("");
-  const [date, setDate] = useState(today());
+  const [date, setDate] = useState(searchParams.get("date") || today());
   const [schedule, setSchedule] = useState([]);
   const [now, setNow] = useState(new Date());
   const [files, setFiles] = useState([]);

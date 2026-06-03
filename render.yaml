@@ -16,7 +16,7 @@ services:
       - key: ADMIN_EMAIL
         value: admin@warehouse.com
       - key: ADMIN_PASSWORD
-        value: admin123
+        sync: false
       - key: CLIENT_URL
         value: https://khoquanly.vercel.app
       - key: CLOUDINARY_CLOUD_NAME

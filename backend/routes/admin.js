@@ -12,6 +12,7 @@ const WorkSchedule = require("../models/WorkSchedule");
 const WorkRule = require("../models/WorkRule");
 const { calculateSalary } = require("../utils/salary");
 const { todayString } = require("../utils/date");
+const { hashPassword } = require("../utils/password");
 
 const router = express.Router();
 
@@ -381,7 +382,7 @@ router.post("/users", async (req, res, next) => {
     const user = await User.create({
       name,
       email,
-      password,
+      password: hashPassword(password),
       role: "user",
       position,
       hourlyRate,
@@ -418,7 +419,7 @@ router.put("/users/:id", async (req, res, next) => {
     }
 
     const update = { name, email, position, hourlyRate: Number.isFinite(hourlyRate) ? hourlyRate : 30000 };
-    if (password) update.password = password;
+    if (password) update.password = hashPassword(password);
 
     const user = await User.findOneAndUpdate(
       { _id: req.params.id, role: "user", active: true },
@@ -508,9 +509,10 @@ router.get("/dashboard", async (req, res, next) => {
     const date = req.query.date || todayString();
     const mode = req.query.mode === "week" ? "week" : "day";
     const { range, filter } = dateRangeFilter({ mode, date });
-    const [employees, pendingSchedules, tasks, reports, checkouts, schedules] = await Promise.all([
+    const [employees, pendingSchedules, pendingOvertime, tasks, reports, checkouts, schedules] = await Promise.all([
       User.find({ role: "user", active: true }).select("name email position").sort({ name: 1 }).lean(),
       WeeklyScheduleRequest.countDocuments({ status: "pending" }),
+      OvertimeRecord.countDocuments({ status: "pending" }),
       DailyTask.find({ date: filter }).select("title date assignedTo statusByUser").lean(),
       TaskReport.countDocuments({ date: filter }),
       CheckoutLog.find({ date: filter }).select("user date checkoutAt").lean(),
@@ -519,6 +521,7 @@ router.get("/dashboard", async (req, res, next) => {
     const scheduleByUser = new Map();
     const checkoutByUser = new Map();
     const taskByUser = new Map();
+    const employeeById = new Map(employees.map((employee) => [String(employee._id), employee]));
     const activeUserIds = new Set(employees.map((employee) => String(employee._id)));
     const validSchedules = schedules.filter((schedule) => activeUserIds.has(String(schedule.user)));
     const scheduledDateKeys = new Set(validSchedules.map((schedule) => `${schedule.user}-${schedule.date}`));
@@ -556,6 +559,39 @@ router.get("/dashboard", async (req, res, next) => {
       });
     });
 
+    const checkoutDateKeys = new Set(validCheckouts.map((checkout) => `${checkout.user}-${checkout.date}`));
+    const missingCheckoutMap = new Map();
+    validSchedules
+      .filter((schedule) => schedule.date <= todayString())
+      .forEach((schedule) => {
+        const key = `${schedule.user}-${schedule.date}`;
+        if (checkoutDateKeys.has(key)) return;
+        const user = employeeById.get(String(schedule.user));
+        const item = missingCheckoutMap.get(key) || {
+          user,
+          date: schedule.date,
+          shifts: [],
+        };
+        item.shifts.push(schedule.shift);
+        missingCheckoutMap.set(key, item);
+      });
+
+    const unfinishedTasks = tasks.flatMap((task) =>
+      (task.assignedTo || [])
+        .map((assignedUser) => {
+          const userId = String(assignedUser);
+          const status = task.statusByUser?.find((item) => String(item.user) === userId)?.status || "not-started";
+          return {
+            taskId: task._id,
+            title: task.title,
+            date: task.date,
+            user: employeeById.get(userId),
+            status,
+          };
+        })
+        .filter((item) => item.user && item.status !== "completed")
+    );
+
     const employeeRows = employees.map((employee) => {
       const userId = String(employee._id);
       const schedule = scheduleByUser.get(userId) || { dates: new Set(), shifts: 0 };
@@ -592,6 +628,7 @@ router.get("/dashboard", async (req, res, next) => {
       range,
       employees: employees.length,
       pendingSchedules,
+      pendingOvertime,
       tasks: tasks.length,
       reports,
       checkouts: validCheckouts.length,
@@ -602,6 +639,12 @@ router.get("/dashboard", async (req, res, next) => {
         sale: buildPositionSummary("sale"),
       },
       employeeRows,
+      actionItems: {
+        pendingSchedules,
+        pendingOvertime,
+        missingCheckouts: Array.from(missingCheckoutMap.values()).sort((a, b) => a.date.localeCompare(b.date)),
+        unfinishedTasks,
+      },
       todayTasks: tasks.length,
       todayReports: reports,
       todayCheckouts: validCheckouts.length,

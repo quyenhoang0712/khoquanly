@@ -8,6 +8,7 @@
     "start": "node server.js",
     "seed:demo": "node scripts/seed-demo.js",
     "seed:may": "node scripts/seed-may-history.js",
+    "migrate:passwords": "node scripts/migrate-password-hashes.js",
     "migrate:cloudinary": "node scripts/migrate-local-images-to-cloudinary.js"
   },
   "keywords": [],
