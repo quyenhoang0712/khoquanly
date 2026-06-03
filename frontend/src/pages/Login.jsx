@@ -3,6 +3,15 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { api, authStorage } from "../api";
 import { Alert } from "../components/DataState";
 
+const requestInitialLocationPermission = () => {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    () => {},
+    () => {},
+    { enableHighAccuracy: false, timeout: 15000, maximumAge: 300000 }
+  );
+};
+
 export default function Login() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -18,6 +27,7 @@ export default function Login() {
       setError("");
       const data = await api.login(formData);
       authStorage.setSession(data.token, data.user);
+      if (data.user?.role === "user") requestInitialLocationPermission();
       navigate(data.user.role === "admin" ? "/admin/dashboard" : "/user/dashboard", { replace: true });
     } catch (err) {
       setError(err.message);
