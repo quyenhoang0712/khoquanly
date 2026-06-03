@@ -230,13 +230,13 @@ export default function UserTasks() {
     try {
       setError("");
       setCameraLoading(true);
+      readLocation();
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
       streamRef.current = stream;
       setCameraOpen(true);
-      readLocation();
     } catch {
       setError("Không mở được camera. Hãy cấp quyền camera để chụp ảnh báo cáo.");
     } finally {
@@ -455,7 +455,7 @@ export default function UserTasks() {
 
       {cameraOpen && (
         <Modal title="Chụp ảnh báo cáo" onClose={stopCamera} className="checkout-camera-modal">
-          <button className="checkout-camera-view checkout-camera-shutter" type="button" onClick={capturePhoto} disabled={captureLoading || files.length >= MAX_REPORT_IMAGES}>
+          <div className="checkout-camera-view checkout-camera-shutter">
             <video ref={videoRef} autoPlay playsInline muted />
             <div className="checkout-camera-time">{reportStamp(now)}</div>
             <div className="checkout-camera-badge">
@@ -464,9 +464,9 @@ export default function UserTasks() {
             </div>
             <div className="checkout-shutter-hint">
               <Camera size={22} />
-              <span>{captureLoading ? "Đang chụp..." : files.length >= MAX_REPORT_IMAGES ? `Đã đủ ${MAX_REPORT_IMAGES} ảnh` : "Bấm vào ảnh để chụp"}</span>
+              <span>{captureLoading ? "Đang chụp..." : files.length >= MAX_REPORT_IMAGES ? `Đã đủ ${MAX_REPORT_IMAGES} ảnh` : "Bấm nút Chụp ảnh"}</span>
             </div>
-          </button>
+          </div>
           <div className="checkout-camera-modal-actions">
             <button className="button primary" type="button" onClick={capturePhoto} disabled={captureLoading || files.length >= MAX_REPORT_IMAGES}>
               <Camera size={18} />

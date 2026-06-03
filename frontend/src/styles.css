@@ -2574,7 +2574,7 @@ tbody tr:hover {
   width: 100%;
   max-height: calc(100vh - 220px);
   padding: 0;
-  cursor: pointer;
+  cursor: default;
 }
 
 .checkout-camera-shutter:disabled {

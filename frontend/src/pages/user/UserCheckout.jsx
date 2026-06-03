@@ -139,15 +139,15 @@ export default function UserCheckout() {
     try {
       setError("");
       setCameraLoading(true);
+      readLocation();
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
       streamRef.current = stream;
       setCameraOpen(true);
-      readLocation();
     } catch {
-      setError("Không mở được camera. Hãy cấp quyền camera hoặc chọn ảnh từ máy.");
+      setError("Không mở được camera. Hãy cấp quyền camera trong trình duyệt.");
     } finally {
       setCameraLoading(false);
     }
@@ -349,7 +349,7 @@ export default function UserCheckout() {
 
       {cameraOpen && (
         <Modal title="Chụp ảnh checkout" onClose={stopCamera} className="checkout-camera-modal">
-          <button className="checkout-camera-view checkout-camera-shutter" type="button" onClick={capturePhoto} disabled={captureLoading || files.length >= MAX_IMAGES}>
+          <div className="checkout-camera-view checkout-camera-shutter">
             <video ref={videoRef} autoPlay playsInline muted />
             <div className="checkout-camera-time">{checkoutStamp(now)}</div>
             <div className="checkout-camera-badge">
@@ -358,9 +358,9 @@ export default function UserCheckout() {
             </div>
             <div className="checkout-shutter-hint">
               <Camera size={22} />
-              <span>{captureLoading ? "Đang chụp..." : files.length >= MAX_IMAGES ? `Đã đủ ${MAX_IMAGES} ảnh` : "Bấm vào ảnh để chụp"}</span>
+              <span>{captureLoading ? "Đang chụp..." : files.length >= MAX_IMAGES ? `Đã đủ ${MAX_IMAGES} ảnh` : "Bấm nút Chụp ảnh"}</span>
             </div>
-          </button>
+          </div>
           <div className="checkout-camera-modal-actions">
             <button className="button primary" type="button" onClick={capturePhoto} disabled={captureLoading || files.length >= MAX_IMAGES}>
               <Camera size={18} />
