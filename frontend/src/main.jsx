@@ -18,6 +18,7 @@ import Login from "./pages/Login";
 import UserCheckout from "./pages/user/UserCheckout";
 import UserDashboard from "./pages/user/UserDashboard";
 import UserOvertime from "./pages/user/UserOvertime";
+import UserProfile from "./pages/user/UserProfile";
 import UserRules from "./pages/user/UserRules";
 import UserSalary from "./pages/user/UserSalary";
 import UserSchedule from "./pages/user/UserSchedule";
@@ -62,6 +63,7 @@ createRoot(document.getElementById("root")).render(
 
         <Route element={<ProtectedRoute role="user" />}>
           <Route path="/user/dashboard" element={<UserDashboard />} />
+          <Route path="/user/profile" element={<UserProfile />} />
           <Route path="/user/schedule" element={<UserSchedule />} />
           <Route path="/user/schedule-request" element={<UserScheduleRequest />} />
           <Route path="/user/tasks" element={<UserTasks />} />

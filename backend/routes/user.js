@@ -10,7 +10,8 @@ const WeeklyScheduleRequest = require("../models/WeeklyScheduleRequest");
 const WorkSchedule = require("../models/WorkSchedule");
 const WorkRule = require("../models/WorkRule");
 const User = require("../models/User");
-const { uploadImages } = require("../utils/cloudinary");
+const { uploadImage, uploadImages } = require("../utils/cloudinary");
+const { hashPassword, verifyPassword } = require("../utils/password");
 const { calculateSalary } = require("../utils/salary");
 const { todayString } = require("../utils/date");
 
@@ -32,6 +33,65 @@ const serializeTaskForUser = (task, userId) => {
     currentStatus: currentStatus?.status || "not-started",
   };
 };
+
+const publicProfile = (user) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  position: user.position,
+  hourlyRate: user.hourlyRate,
+  avatar: user.avatar || "",
+  createdAt: user.createdAt,
+});
+
+router.get("/profile", async (req, res, next) => {
+  try {
+    const user = await User.findOne({ _id: req.user.id, active: true }).select("-password").lean();
+    if (!user) return res.status(404).json({ message: "Không tìm thấy hồ sơ" });
+    res.json(publicProfile(user));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/profile/password", async (req, res, next) => {
+  try {
+    const currentPassword = String(req.body.currentPassword || "");
+    const newPassword = String(req.body.newPassword || "");
+    if (!currentPassword || newPassword.length < 6) {
+      return res.status(400).json({ message: "Vui lòng nhập mật khẩu hiện tại và mật khẩu mới ít nhất 6 ký tự" });
+    }
+
+    const user = await User.findOne({ _id: req.user.id, active: true });
+    if (!user) return res.status(404).json({ message: "Không tìm thấy hồ sơ" });
+    if (!verifyPassword(currentPassword, user.password)) {
+      return res.status(400).json({ message: "Mật khẩu hiện tại không đúng" });
+    }
+
+    user.password = hashPassword(newPassword);
+    await user.save();
+    res.json({ message: "Đã đổi mật khẩu" });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/profile/avatar", upload.single("avatar"), async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: "Vui lòng chọn ảnh đại diện" });
+    const avatar = await uploadImage(req.file, "warehouse-management/avatars");
+    const user = await User.findOneAndUpdate(
+      { _id: req.user.id, active: true },
+      { avatar },
+      { new: true }
+    ).select("-password");
+    if (!user) return res.status(404).json({ message: "Không tìm thấy hồ sơ" });
+    res.json(publicProfile(user));
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get("/my-schedule", async (req, res, next) => {
   try {

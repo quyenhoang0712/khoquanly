@@ -27,6 +27,7 @@ const publicUser = (user) => ({
   name: user.name,
   role: user.role,
   position: user.position,
+  avatar: user.avatar,
 });
 
 router.post("/login", async (req, res, next) => {

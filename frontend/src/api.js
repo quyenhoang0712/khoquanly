@@ -162,6 +162,15 @@ export const api = {
   async getMySchedule(params) {
     return parseResponse(await request(`${API_BASE_URL}/user/my-schedule${query(params)}`));
   },
+  async getMyProfile() {
+    return parseResponse(await request(`${API_BASE_URL}/user/profile`));
+  },
+  async updateMyAvatar(formData) {
+    return parseResponse(await request(`${API_BASE_URL}/user/profile/avatar`, { method: "PUT", body: formData }));
+  },
+  async updateMyPassword(payload) {
+    return parseResponse(await request(`${API_BASE_URL}/user/profile/password`, jsonOptions("PUT", payload)));
+  },
   async getMyCheckouts(params) {
     return parseResponse(await request(`${API_BASE_URL}/user/my-checkouts${query(params)}`));
   },

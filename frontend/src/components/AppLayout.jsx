@@ -8,6 +8,7 @@ import {
   LogOut,
   Menu,
   ReceiptText,
+  UserRound,
   Users,
   X,
 } from "lucide-react";
@@ -31,6 +32,7 @@ const adminItems = [
 
 const userItems = [
   { to: "/user/dashboard", label: "Dashboard", icon: BarChart3 },
+  { to: "/user/profile", label: "Hồ sơ", icon: UserRound },
   { to: "/user/schedule", label: "Lịch của tôi", icon: CalendarDays },
   { to: "/user/schedule-request", label: "Đăng ký ngày làm", icon: ClipboardCheck },
   { to: "/user/tasks", label: "Việc hôm nay", icon: ClipboardCheck },
