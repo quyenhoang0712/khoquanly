@@ -376,11 +376,11 @@ router.post("/users", async (req, res, next) => {
     }
 
     const existed = await User.findOne({ email });
-    if (existed) {
+    if (existed?.active) {
       return res.status(409).json({ message: "Email này đã tồn tại" });
     }
 
-    const user = await User.create({
+    const userPayload = {
       name,
       email,
       password: hashPassword(password),
@@ -388,7 +388,11 @@ router.post("/users", async (req, res, next) => {
       position,
       hourlyRate,
       active: true,
-    });
+    };
+
+    const user = existed
+      ? await User.findByIdAndUpdate(existed._id, userPayload, { new: true, runValidators: true })
+      : await User.create(userPayload);
 
     const emailDelivery = await sendEmployeeWelcomeEmail({ to: email, name, password }).catch((error) => ({
       sent: false,
@@ -448,11 +452,6 @@ router.delete("/users/:id", async (req, res, next) => {
 
     if (!user) return res.status(404).json({ message: "Không tìm thấy nhân sự" });
 
-    if (user.active) {
-      user.active = false;
-      await user.save();
-    }
-
     const taskReports = await TaskReport.find({ user: userId }).select("_id");
     const taskReportIds = taskReports.map((report) => report._id);
     const tasksOnlyAssignedToUser = await DailyTask.find({ $and: [{ assignedTo: userId }, { assignedTo: { $size: 1 } }] }).select("_id");
@@ -469,6 +468,7 @@ router.delete("/users/:id", async (req, res, next) => {
       reportImages,
       deletedTasks,
       updatedTasks,
+      deletedUser,
     ] = await Promise.all([
       WorkSchedule.deleteMany({ user: userId }),
       WeeklyScheduleRequest.deleteMany({ user: userId }),
@@ -488,6 +488,7 @@ router.delete("/users/:id", async (req, res, next) => {
           },
         }
       ),
+      User.deleteOne({ _id: userId, role: "user" }),
     ]);
 
     res.json({
@@ -504,6 +505,7 @@ router.delete("/users/:id", async (req, res, next) => {
         reportImages: reportImages.deletedCount || 0,
         tasks: deletedTasks.deletedCount || 0,
         taskAssignments: updatedTasks.modifiedCount || 0,
+        users: deletedUser.deletedCount || 0,
       },
     });
   } catch (error) {

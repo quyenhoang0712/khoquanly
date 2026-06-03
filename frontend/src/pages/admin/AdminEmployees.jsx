@@ -120,12 +120,12 @@ export default function AdminEmployees() {
   };
 
   const deleteUser = async (user) => {
-    if (!window.confirm(`Xoá nhân sự ${user.name}? Lịch làm, checkout và lương cũ vẫn được giữ lại.`)) return;
+    if (!window.confirm(`Xoá nhân sự ${user.name}? Tất cả lịch làm, đăng ký lịch, checkout, lương, tăng ca, phí dịch vụ, báo cáo và phân công liên quan sẽ bị xoá khỏi database.`)) return;
     try {
       setError("");
       setMessage("");
       await api.deleteAdminUser(user._id);
-      setMessage("Đã ghi nhận.");
+      setMessage("Đã xoá nhân sự và toàn bộ dữ liệu liên quan.");
       await loadUsers();
     } catch (err) {
       setError(err.message);
