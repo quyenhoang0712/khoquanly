@@ -1,6 +1,7 @@
 const nodemailer = require("nodemailer");
 
 const requiredKeys = ["SMTP_HOST", "SMTP_USER", "SMTP_PASS"];
+const MAIL_TIMEOUT_MS = Number(process.env.MAIL_TIMEOUT_MS || 8000);
 
 const mailConfigStatus = () => {
   const missing = requiredKeys.filter((key) => !String(process.env[key] || "").trim());
@@ -16,6 +17,9 @@ const createTransporter = () => {
     host: process.env.SMTP_HOST,
     port,
     secure: port === 465,
+    connectionTimeout: MAIL_TIMEOUT_MS,
+    greetingTimeout: MAIL_TIMEOUT_MS,
+    socketTimeout: MAIL_TIMEOUT_MS,
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
@@ -30,6 +34,14 @@ const escapeHtml = (value) =>
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+
+const withTimeout = (promise, timeoutMs) =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Gửi email quá thời gian chờ. Vui lòng kiểm tra cấu hình SMTP.")), timeoutMs);
+    }),
+  ]);
 
 const sendEmployeeWelcomeEmail = async ({ to, name, password }) => {
   const status = mailConfigStatus();
@@ -65,7 +77,7 @@ const sendEmployeeWelcomeEmail = async ({ to, name, password }) => {
     </div>
   `;
 
-  await createTransporter().sendMail({ from, to, subject, text, html });
+  await withTimeout(createTransporter().sendMail({ from, to, subject, text, html }), MAIL_TIMEOUT_MS);
   return { sent: true, skipped: false };
 };
 

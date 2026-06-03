@@ -35,3 +35,5 @@ services:
         sync: false
       - key: MAIL_FROM
         sync: false
+      - key: MAIL_TIMEOUT_MS
+        value: 8000
