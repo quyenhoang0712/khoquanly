@@ -397,6 +397,7 @@ router.post("/users", async (req, res, next) => {
       ? await User.findByIdAndUpdate(existed._id, userPayload, { new: true, runValidators: true })
       : await User.create(userPayload);
 
+    console.log(`Employee login email queued for ${email} from ${process.env.SMTP_USER || "unconfigured SMTP_USER"}`);
     sendEmployeeWelcomeEmail({ to: email, name, password })
       .then((result) => {
         if (result.sent) console.log(`Employee login email sent to ${email}`);
