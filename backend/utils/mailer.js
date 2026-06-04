@@ -1,7 +1,7 @@
 const nodemailer = require("nodemailer");
 
 const requiredKeys = ["SMTP_HOST", "SMTP_USER", "SMTP_PASS"];
-const MAIL_TIMEOUT_MS = Number(process.env.MAIL_TIMEOUT_MS || 8000);
+const MAIL_TIMEOUT_MS = Number(process.env.MAIL_TIMEOUT_MS || 30000);
 
 const mailConfigStatus = () => {
   const missing = requiredKeys.filter((key) => !String(process.env[key] || "").trim());
@@ -17,6 +17,7 @@ const createTransporter = () => {
     host: String(process.env.SMTP_HOST || "").trim(),
     port,
     secure: port === 465,
+    family: 4,
     connectionTimeout: MAIL_TIMEOUT_MS,
     greetingTimeout: MAIL_TIMEOUT_MS,
     socketTimeout: MAIL_TIMEOUT_MS,
