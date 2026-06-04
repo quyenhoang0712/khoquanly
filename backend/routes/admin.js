@@ -20,6 +20,9 @@ const router = express.Router();
 const populateUser = { path: "user", select: "name email role position active hourlyRate" };
 const populateAssigned = { path: "assignedTo", select: "name email" };
 
+const describeError = (error) =>
+  [error.message, error.code, error.command, error.responseCode, error.response].filter(Boolean).join(" | ");
+
 const requestOrigin = (req) => {
   const protocol = req.get("x-forwarded-proto") || req.protocol;
   const host = req.get("x-forwarded-host") || req.get("host");
@@ -400,7 +403,7 @@ router.post("/users", async (req, res, next) => {
         else console.warn(`Employee login email skipped for ${email}: ${result.reason || "Unknown reason"}`);
       })
       .catch((error) => {
-        console.warn(`Employee login email failed for ${email}: ${error.message}`);
+        console.warn(`Employee login email failed for ${email}: ${describeError(error)}`);
       });
 
     const created = user.toObject();
