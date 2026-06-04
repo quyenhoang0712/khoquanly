@@ -14,15 +14,15 @@ const mailConfigStatus = () => {
 const createTransporter = () => {
   const port = Number(process.env.SMTP_PORT || 587);
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
+    host: String(process.env.SMTP_HOST || "").trim(),
     port,
     secure: port === 465,
     connectionTimeout: MAIL_TIMEOUT_MS,
     greetingTimeout: MAIL_TIMEOUT_MS,
     socketTimeout: MAIL_TIMEOUT_MS,
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: String(process.env.SMTP_USER || "").trim(),
+      pass: String(process.env.SMTP_PASS || "").replace(/\s+/g, ""),
     },
   });
 };

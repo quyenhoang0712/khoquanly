@@ -394,15 +394,18 @@ router.post("/users", async (req, res, next) => {
       ? await User.findByIdAndUpdate(existed._id, userPayload, { new: true, runValidators: true })
       : await User.create(userPayload);
 
-    const emailDelivery = await sendEmployeeWelcomeEmail({ to: email, name, password }).catch((error) => ({
-      sent: false,
-      skipped: false,
-      reason: error.message,
-    }));
+    sendEmployeeWelcomeEmail({ to: email, name, password })
+      .then((result) => {
+        if (result.sent) console.log(`Employee login email sent to ${email}`);
+        else console.warn(`Employee login email skipped for ${email}: ${result.reason || "Unknown reason"}`);
+      })
+      .catch((error) => {
+        console.warn(`Employee login email failed for ${email}: ${error.message}`);
+      });
 
     const created = user.toObject();
     delete created.password;
-    res.status(201).json({ ...created, emailDelivery });
+    res.status(201).json({ ...created, emailDelivery: { queued: true } });
   } catch (error) {
     next(error);
   }
