@@ -445,6 +445,8 @@ router.post("/users", async (req, res, next) => {
   const password = String(req.body.password || "");
   const position = ["warehouse", "sale"].includes(req.body.position) ? req.body.position : "warehouse";
   const hourlyRate = Number(req.body.hourlyRate || 30000);
+  const travelAllowanceEnabled = req.body.travelAllowanceEnabled === true;
+  const travelAllowanceAmount = Number(req.body.travelAllowanceAmount || 150000);
 
   try {
     if (!name || !email || !password) {
@@ -467,6 +469,8 @@ router.post("/users", async (req, res, next) => {
       role: "user",
       position,
       hourlyRate,
+      travelAllowanceEnabled,
+      travelAllowanceAmount: Number.isFinite(travelAllowanceAmount) ? travelAllowanceAmount : 150000,
       active: true,
     };
 
@@ -488,6 +492,8 @@ router.put("/users/:id", async (req, res, next) => {
   const password = String(req.body.password || "");
   const position = ["warehouse", "sale"].includes(req.body.position) ? req.body.position : "warehouse";
   const hourlyRate = Number(req.body.hourlyRate || 0);
+  const travelAllowanceEnabled = req.body.travelAllowanceEnabled === true;
+  const travelAllowanceAmount = Number(req.body.travelAllowanceAmount || 150000);
 
   try {
     if (!name || !email) {
@@ -503,7 +509,14 @@ router.put("/users/:id", async (req, res, next) => {
       return res.status(409).json({ message: "Email này đã tồn tại" });
     }
 
-    const update = { name, email, position, hourlyRate: Number.isFinite(hourlyRate) ? hourlyRate : 30000 };
+    const update = {
+      name,
+      email,
+      position,
+      hourlyRate: Number.isFinite(hourlyRate) ? hourlyRate : 30000,
+      travelAllowanceEnabled,
+      travelAllowanceAmount: Number.isFinite(travelAllowanceAmount) ? travelAllowanceAmount : 150000,
+    };
     if (password) update.password = hashPassword(password);
 
     const user = await User.findOneAndUpdate(

@@ -10,6 +10,8 @@ const initialForm = {
   password: "",
   position: "warehouse",
   hourlyRate: 30000,
+  travelAllowanceEnabled: false,
+  travelAllowanceAmount: 150000,
 };
 
 const positionLabels = {
@@ -109,6 +111,8 @@ export default function AdminEmployees() {
       password: "",
       position: user.position || "warehouse",
       hourlyRate: user.hourlyRate || 30000,
+      travelAllowanceEnabled: user.travelAllowanceEnabled === true,
+      travelAllowanceAmount: user.travelAllowanceAmount || 150000,
     });
     setError("");
     setMessage("");
@@ -218,6 +222,10 @@ export default function AdminEmployees() {
                         <span>Lương giờ</span>
                         <strong>{formatCurrency(user.hourlyRate)}</strong>
                       </div>
+                      <div>
+                        <span>Phí đi lại</span>
+                        <strong>{user.travelAllowanceEnabled ? formatCurrency(user.travelAllowanceAmount || 0) : "Không cộng"}</strong>
+                      </div>
                     </div>
                   </article>
                 ))}
@@ -273,6 +281,27 @@ export default function AdminEmployees() {
                 required
               />
             </label>
+            <label className="toggle-row">
+              <input
+                type="checkbox"
+                checked={form.travelAllowanceEnabled}
+                onChange={(event) => setForm({ ...form, travelAllowanceEnabled: event.target.checked })}
+              />
+              <span>Cộng phí đi lại vào lương</span>
+            </label>
+            {form.travelAllowanceEnabled && (
+              <label className="field">
+                <span>Phí đi lại</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={form.travelAllowanceAmount}
+                  onChange={(event) => setForm({ ...form, travelAllowanceAmount: Number(event.target.value) })}
+                  required
+                />
+              </label>
+            )}
             <button className="button primary" disabled={loading}>
               {loading ? "Đang lưu..." : editingUser ? "Lưu thay đổi" : "Tạo nhân sự"}
             </button>
