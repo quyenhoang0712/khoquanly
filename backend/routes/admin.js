@@ -12,7 +12,7 @@ const WorkSchedule = require("../models/WorkSchedule");
 const WorkRule = require("../models/WorkRule");
 const { calculateSalary } = require("../utils/salary");
 const { todayString } = require("../utils/date");
-const { sendEmployeeWelcomeEmail } = require("../utils/mailer");
+const { sendEmployeeWelcomeEmail, mailConfigStatus } = require("../utils/mailer");
 const { hashPassword } = require("../utils/password");
 
 const router = express.Router();
@@ -480,7 +480,8 @@ router.post("/users", async (req, res, next) => {
 
     let emailDelivery;
     try {
-      console.log(`Employee login email sending to ${email} from ${process.env.SMTP_USER || "unconfigured SMTP_USER"}`);
+      const mailStatus = mailConfigStatus();
+      console.log(`Employee login email sending to ${email} via ${mailStatus.provider} from ${process.env.MAIL_FROM || process.env.SMTP_USER || "unconfigured sender"}`);
       emailDelivery = await sendEmployeeWelcomeEmail({ to: email, name, password });
       if (emailDelivery.sent) {
         console.log(`Employee login email sent to ${email}`);
