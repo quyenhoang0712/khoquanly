@@ -12,16 +12,12 @@ const WorkSchedule = require("../models/WorkSchedule");
 const WorkRule = require("../models/WorkRule");
 const { calculateSalary } = require("../utils/salary");
 const { todayString } = require("../utils/date");
-const { sendEmployeeWelcomeEmail, mailConfigStatus } = require("../utils/mailer");
 const { hashPassword } = require("../utils/password");
 
 const router = express.Router();
 
 const populateUser = { path: "user", select: "name email role position active hourlyRate" };
 const populateAssigned = { path: "assignedTo", select: "name email" };
-
-const describeError = (error) =>
-  [error.message, error.code, error.command, error.responseCode, error.response].filter(Boolean).join(" | ");
 
 const requestOrigin = (req) => {
   const protocol = req.get("x-forwarded-proto") || req.protocol;
@@ -478,24 +474,9 @@ router.post("/users", async (req, res, next) => {
       ? await User.findByIdAndUpdate(existed._id, userPayload, { new: true, runValidators: true })
       : await User.create(userPayload);
 
-    let emailDelivery;
-    try {
-      const mailStatus = mailConfigStatus();
-      console.log(`Employee login email sending to ${email} via ${mailStatus.provider} from ${process.env.MAIL_FROM || process.env.SMTP_USER || "unconfigured sender"}`);
-      emailDelivery = await sendEmployeeWelcomeEmail({ to: email, name, password });
-      if (emailDelivery.sent) {
-        console.log(`Employee login email sent to ${email}`);
-      } else {
-        console.warn(`Employee login email skipped for ${email}: ${emailDelivery.reason || "Unknown reason"}`);
-      }
-    } catch (error) {
-      emailDelivery = { sent: false, skipped: false, reason: describeError(error) };
-      console.warn(`Employee login email failed for ${email}: ${emailDelivery.reason}`);
-    }
-
     const created = user.toObject();
     delete created.password;
-    res.status(201).json({ ...created, emailDelivery });
+    res.status(201).json(created);
   } catch (error) {
     next(error);
   }

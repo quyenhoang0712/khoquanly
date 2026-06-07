@@ -79,13 +79,7 @@ export default function AdminEmployees() {
         setMessage("Đã ghi nhận.");
       } else {
         const created = await api.createAdminUser(form);
-        setMessage(
-          created.emailDelivery?.sent
-            ? "Đã tạo nhân sự và gửi thông tin đăng nhập qua email."
-            : created.emailDelivery?.queued
-              ? "Đã tạo nhân sự. Email thông tin đăng nhập đang được gửi."
-            : `Đã tạo nhân sự nhưng chưa gửi được email. ${created.emailDelivery?.reason || "Vui lòng kiểm tra cấu hình SMTP."}`
-        );
+        setMessage(`Đã tạo nhân sự. Gửi thủ công: ${created.email} / ${form.password}`);
       }
       setOpen(false);
       setEditingUser(null);
