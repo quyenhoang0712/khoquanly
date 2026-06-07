@@ -1,7 +1,9 @@
+const dns = require("dns");
 const nodemailer = require("nodemailer");
 
 const requiredKeys = ["SMTP_HOST", "SMTP_USER", "SMTP_PASS"];
-const MAIL_TIMEOUT_MS = Number(process.env.MAIL_TIMEOUT_MS || 30000);
+const mailTimeoutEnv = Number(process.env.MAIL_TIMEOUT_MS || 30000);
+const MAIL_TIMEOUT_MS = Math.min(Math.max(Number.isFinite(mailTimeoutEnv) ? mailTimeoutEnv : 30000, 5000), 30000);
 
 const mailConfigStatus = () => {
   const missing = requiredKeys.filter((key) => !String(process.env[key] || "").trim());
@@ -11,10 +13,25 @@ const mailConfigStatus = () => {
   };
 };
 
-const createTransporter = () => {
+const resolveSmtpHost = async (host) => {
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return { host, servername: host };
+
+  const addresses = await dns.promises.resolve4(host);
+  if (!addresses.length) {
+    const error = new Error(`Không tìm thấy IPv4 cho SMTP host ${host}`);
+    error.code = "SMTP_IPV4_NOT_FOUND";
+    throw error;
+  }
+
+  return { host: addresses[0], servername: host };
+};
+
+const createTransporter = async () => {
+  const smtpHost = String(process.env.SMTP_HOST || "").trim();
+  const resolved = await resolveSmtpHost(smtpHost);
   const port = Number(process.env.SMTP_PORT || 587);
   return nodemailer.createTransport({
-    host: String(process.env.SMTP_HOST || "").trim(),
+    host: resolved.host,
     port,
     secure: port === 465,
     family: 4,
@@ -24,6 +41,9 @@ const createTransporter = () => {
     auth: {
       user: String(process.env.SMTP_USER || "").trim(),
       pass: String(process.env.SMTP_PASS || "").replace(/\s+/g, ""),
+    },
+    tls: {
+      servername: resolved.servername,
     },
   });
 };
@@ -78,7 +98,8 @@ const sendEmployeeWelcomeEmail = async ({ to, name, password }) => {
     </div>
   `;
 
-  await withTimeout(createTransporter().sendMail({ from, to, subject, text, html }), MAIL_TIMEOUT_MS);
+  const transporter = await createTransporter();
+  await withTimeout(transporter.sendMail({ from, to, subject, text, html }), MAIL_TIMEOUT_MS);
   return { sent: true, skipped: false };
 };
 
