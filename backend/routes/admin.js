@@ -419,7 +419,7 @@ router.put("/rules/:id", async (req, res, next) => {
         active,
         updatedBy: req.user.id,
       },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     );
 
     if (!rule) return res.status(404).json({ message: "Không tìm thấy nội quy" });
@@ -471,7 +471,7 @@ router.post("/users", async (req, res, next) => {
     };
 
     const user = existed
-      ? await User.findByIdAndUpdate(existed._id, userPayload, { new: true, runValidators: true })
+      ? await User.findByIdAndUpdate(existed._id, userPayload, { returnDocument: "after", runValidators: true })
       : await User.create(userPayload);
 
     const created = user.toObject();
@@ -509,7 +509,7 @@ router.put("/users/:id", async (req, res, next) => {
     const user = await User.findOneAndUpdate(
       { _id: req.params.id, role: "user", active: true },
       update,
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     ).select("-password");
 
     if (!user) return res.status(404).json({ message: "Không tìm thấy nhân sự" });
@@ -907,7 +907,7 @@ router.put("/schedule-requests/:id/reject", async (req, res, next) => {
     const request = await WeeklyScheduleRequest.findByIdAndUpdate(
       req.params.id,
       { status: "rejected", adminNote: req.body.adminNote || "", reviewedBy: req.user.id, reviewedAt: new Date() },
-      { new: true }
+      { returnDocument: "after" }
     ).populate(populateUser);
     if (!request) return res.status(404).json({ message: "Schedule request not found" });
     res.json(request);
@@ -1129,7 +1129,7 @@ router.post("/checkouts/manual", async (req, res, next) => {
           note: req.body.note || "Admin xác nhận checkout thủ công.",
         },
       },
-      { new: true, upsert: true, runValidators: true }
+      { returnDocument: "after", upsert: true, runValidators: true }
     ).populate(populateUser);
 
     const item = checkout.toObject();
@@ -1266,7 +1266,7 @@ router.put("/overtime/:id", async (req, res, next) => {
         amount: hours * hourlyRate,
         note,
       },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     ).populate(populateUser);
 
     if (!record) return res.status(404).json({ message: "Không tìm thấy tăng ca" });

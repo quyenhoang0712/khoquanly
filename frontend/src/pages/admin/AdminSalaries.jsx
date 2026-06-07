@@ -118,7 +118,7 @@ export default function AdminSalaries() {
       <div className="task-board-grid">
         {!loading &&
           rows.map((row) => (
-            <article className="task-board-card" key={row.user?._id || row.user?.email}>
+            <article className="task-board-card salary-card" key={row.user?._id || row.user?.email}>
               <div className="task-board-card-header">
                 <div>
                   <span>Nhân viên</span>
@@ -129,7 +129,7 @@ export default function AdminSalaries() {
                 </button>
               </div>
               <div className="task-board-fields">
-                <div className="task-board-field-wide">
+                <div className="task-board-field-wide salary-email-field">
                   <span>Email</span>
                   <p>{row.user?.email || "-"}</p>
                 </div>

@@ -84,7 +84,7 @@ router.put("/profile/avatar", upload.single("avatar"), async (req, res, next) =>
     const user = await User.findOneAndUpdate(
       { _id: req.user.id, active: true },
       { avatar },
-      { new: true }
+      { returnDocument: "after" }
     ).select("-password");
     if (!user) return res.status(404).json({ message: "Không tìm thấy hồ sơ" });
     res.json(publicProfile(user));
@@ -170,7 +170,7 @@ router.post("/schedule-requests", async (req, res, next) => {
     const request = await WeeklyScheduleRequest.findOneAndUpdate(
       { user: req.user.id, weekStart },
       { user: req.user.id, weekStart, shifts, note, status: "pending", adminNote: "", reviewedAt: null },
-      { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: "after", runValidators: true, setDefaultsOnInsert: true }
     );
     res.status(201).json(request);
   } catch (error) {
@@ -254,7 +254,7 @@ router.post("/checkout", upload.array("images", 6), async (req, res, next) => {
     const checkout = await CheckoutLog.findOneAndUpdate(
       { user: req.user.id, date },
       update,
-      { upsert: true, new: true, runValidators: true }
+      { upsert: true, returnDocument: "after", runValidators: true }
     );
     res.status(201).json(checkout);
   } catch (error) {

@@ -3644,6 +3644,24 @@ tbody tr:hover {
   min-height: 112px;
 }
 
+.salary-card .task-board-fields {
+  grid-template-columns: minmax(0, 1.6fr) minmax(96px, 0.6fr);
+}
+
+.salary-card .task-board-field-wide {
+  grid-column: auto;
+}
+
+.salary-email-field {
+  min-width: 0;
+}
+
+.salary-email-field p {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .salary-detail-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -4416,6 +4434,10 @@ tbody tr:hover {
 
   .task-board-card-header,
   .task-board-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .salary-card .task-board-fields {
     grid-template-columns: 1fr;
   }
 
