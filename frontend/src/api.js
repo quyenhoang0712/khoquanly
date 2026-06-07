@@ -134,6 +134,9 @@ export const api = {
   async getAdminCheckouts(params) {
     return parseResponse(await request(`${API_BASE_URL}/admin/checkouts${query(params)}`));
   },
+  async confirmAdminCheckout(payload) {
+    return parseResponse(await request(`${API_BASE_URL}/admin/checkouts/manual`, jsonOptions("POST", payload)));
+  },
   async getAdminSalaries(params) {
     return parseResponse(await request(`${API_BASE_URL}/admin/salaries${query(params)}`));
   },

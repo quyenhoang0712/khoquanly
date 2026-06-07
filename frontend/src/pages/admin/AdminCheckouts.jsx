@@ -14,9 +14,12 @@ export default function AdminCheckouts() {
   const [scheduledUsers, setScheduledUsers] = useState([]);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [confirmingUserId, setConfirmingUserId] = useState("");
 
-  useEffect(() => {
-    Promise.all([api.getAdminCheckouts({ date }), api.getAdminSchedules({ date, status: "scheduled" })])
+  const load = () => {
+    setError("");
+    return Promise.all([api.getAdminCheckouts({ date }), api.getAdminSchedules({ date, status: "scheduled" })])
       .then(([checkoutRows, scheduleRows]) => {
         setCheckouts(checkoutRows);
         const usersById = new Map();
@@ -28,6 +31,10 @@ export default function AdminCheckouts() {
         setScheduledUsers(Array.from(usersById.values()));
       })
       .catch((err) => setError(err.message));
+  };
+
+  useEffect(() => {
+    load();
   }, [date]);
 
   const checkoutImages = (checkout) =>
@@ -67,6 +74,28 @@ export default function AdminCheckouts() {
     return new Date(value).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
   };
 
+  const confirmCheckout = async (record) => {
+    const userId = record.user?._id;
+    if (!userId) return;
+    try {
+      setConfirmingUserId(userId);
+      setError("");
+      setMessage("");
+      await api.confirmAdminCheckout({
+        userId,
+        date,
+        note: "Admin xác nhận checkout để bổ sung dữ liệu lương.",
+      });
+      setMessage(`Đã xác nhận checkout cho ${record.user?.name || "nhân viên"}.`);
+      setSelectedRecord(null);
+      await load();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setConfirmingUserId("");
+    }
+  };
+
   return (
     <section className="page">
       <div className="page-header">
@@ -78,6 +107,7 @@ export default function AdminCheckouts() {
       </div>
 
       <Alert message={error} />
+      <Alert message={message} type="success" />
 
       <div className="checkout-overview">
         <div className="checkout-date-card">
@@ -196,6 +226,12 @@ export default function AdminCheckouts() {
               </div>
             ) : (
               <div className="checkout-detail-empty">Không có ảnh checkout.</div>
+            )}
+
+            {!selectedRecord.checkout && (
+              <button className="button primary" type="button" onClick={() => confirmCheckout(selectedRecord)} disabled={confirmingUserId === selectedRecord.user?._id}>
+                {confirmingUserId === selectedRecord.user?._id ? "Đang xác nhận..." : "Xác nhận đã checkout"}
+              </button>
             )}
           </div>
         </Modal>

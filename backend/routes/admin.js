@@ -1104,6 +1104,42 @@ router.get("/checkouts", async (req, res, next) => {
   }
 });
 
+router.post("/checkouts/manual", async (req, res, next) => {
+  try {
+    const userId = String(req.body.userId || "").trim();
+    const date = String(req.body.date || "").trim();
+    if (!userId || !date) return res.status(400).json({ message: "Vui lòng chọn nhân viên và ngày checkout" });
+
+    const user = await User.findOne({ _id: userId, role: "user", active: true }).select("_id");
+    if (!user) return res.status(404).json({ message: "Không tìm thấy nhân viên" });
+
+    const checkoutAt = req.body.checkoutAt ? new Date(req.body.checkoutAt) : new Date(`${date}T23:59:00+07:00`);
+    if (Number.isNaN(checkoutAt.getTime())) return res.status(400).json({ message: "Thời gian checkout không hợp lệ" });
+
+    const checkout = await CheckoutLog.findOneAndUpdate(
+      { user: userId, date },
+      {
+        $setOnInsert: {
+          user: userId,
+          date,
+          images: [],
+        },
+        $set: {
+          checkoutAt,
+          note: req.body.note || "Admin xác nhận checkout thủ công.",
+        },
+      },
+      { new: true, upsert: true, runValidators: true }
+    ).populate(populateUser);
+
+    const item = checkout.toObject();
+    item.imageUrls = (item.images || []).map((image) => publicAssetUrl(req, image));
+    res.status(201).json(item);
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get("/salaries", async (req, res, next) => {
   try {
     const { month, year } = parseMonthYear(req.query);
