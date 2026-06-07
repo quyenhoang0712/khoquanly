@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../api";
 import { Alert } from "../../components/DataState";
 import Modal from "../../components/Modal";
-import { formatCurrency } from "../../utils/workforce";
+import { assetUrl, formatCurrency } from "../../utils/workforce";
 
 const initialForm = {
   name: "",
@@ -193,7 +193,9 @@ export default function AdminEmployees() {
                   <article className="task-board-card employee-card" key={user._id}>
                     <div className="task-board-card-header">
                       <div className="employee-card-title">
-                        <span className="employee-avatar">{user.name?.slice(0, 1)?.toUpperCase() || "N"}</span>
+                        <span className="employee-avatar">
+                          {user.avatar ? <img src={assetUrl(user.avatar)} alt={user.name || "avatar"} /> : user.name?.slice(0, 1)?.toUpperCase() || "N"}
+                        </span>
                         <div>
                           <span>Nhân viên</span>
                           <strong>{user.name}</strong>

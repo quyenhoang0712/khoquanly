@@ -338,6 +338,12 @@ button {
   background: rgba(255, 255, 255, 0.06);
 }
 
+.sidebar-bottom-nav {
+  flex-shrink: 0;
+  margin-bottom: 10px;
+  padding-right: 4px;
+}
+
 .admin-box span,
 .admin-box strong {
   display: block;
@@ -902,6 +908,124 @@ h2 {
 
 .dashboard-action-card.purple {
   background: var(--purple-soft);
+}
+
+.dashboard-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.dashboard-chart-card {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 14px;
+  min-height: 286px;
+  padding: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-chart-copy span {
+  display: block;
+  color: var(--slate-500);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.dashboard-chart-copy strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--slate-900);
+  font-size: 18px;
+}
+
+.donut-chart {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  margin: 0 auto;
+}
+
+.donut-chart svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.donut-chart-track,
+.donut-chart-segment {
+  fill: none;
+  stroke-width: 15;
+}
+
+.donut-chart-track {
+  stroke: var(--slate-100);
+}
+
+.donut-chart-segment {
+  stroke-linecap: round;
+}
+
+.donut-chart > div {
+  position: absolute;
+  inset: 28px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  text-align: center;
+}
+
+.donut-chart > div strong {
+  color: var(--slate-900);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.donut-chart > div span {
+  max-width: 86px;
+  margin-top: 6px;
+  color: var(--slate-500);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.dashboard-chart-legend {
+  display: grid;
+  gap: 8px;
+  align-self: end;
+}
+
+.dashboard-chart-legend > div {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--slate-600);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dashboard-chart-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.dashboard-chart-legend span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-chart-legend strong {
+  color: var(--slate-900);
 }
 
 .daily-report-grid {
@@ -3353,6 +3477,14 @@ tbody tr:hover {
   font-size: 18px !important;
   font-weight: 900 !important;
   text-transform: uppercase;
+  overflow: hidden;
+}
+
+.employee-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 .employee-card .task-board-fields strong {
@@ -3865,6 +3997,10 @@ tbody tr:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .dashboard-chart-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .task-board-grid {
     grid-template-columns: 1fr;
   }
@@ -4153,6 +4289,14 @@ tbody tr:hover {
   .modal {
     width: calc(100vw - 20px);
     max-height: calc(100dvh - 20px);
+  }
+
+  .dashboard-chart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-chart-card {
+    min-height: 0;
   }
 
   .modal-header {

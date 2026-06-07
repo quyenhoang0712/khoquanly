@@ -90,7 +90,7 @@ export default function UserCheckout() {
   const canCheckout = isToday;
   const checkoutHint = !isToday
     ? "Chỉ được checkout cho ngày hôm nay."
-    : "Có thể checkout để test.";
+    : "Có thể checkout cho ngày hôm nay.";
 
   const readLocation = async () => {
     if (!navigator.geolocation) return "Không lấy được vị trí";

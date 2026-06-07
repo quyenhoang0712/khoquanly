@@ -48,6 +48,9 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const user = authStorage.getUser();
   const navItems = user?.role === "admin" ? adminItems : userItems;
+  const sidebarProfileItem = user?.role === "admin" ? null : userItems.find((item) => item.to === "/user/profile");
+  const sidebarItems = sidebarProfileItem ? navItems.filter((item) => item.to !== sidebarProfileItem.to) : navItems;
+  const SidebarProfileIcon = sidebarProfileItem?.icon;
 
   const logout = () => {
     authStorage.clearSession();
@@ -73,7 +76,7 @@ export default function AppLayout() {
           </div>
         </button>
         <nav className="nav-list">
-          {navItems.map((item) => {
+          {sidebarItems.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink key={item.to} to={item.to} className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`} onClick={() => setOpen(false)}>
@@ -83,6 +86,19 @@ export default function AppLayout() {
             );
           })}
         </nav>
+
+        {sidebarProfileItem && SidebarProfileIcon ? (
+          <div className="sidebar-bottom-nav">
+            <NavLink
+              to={sidebarProfileItem.to}
+              className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+              onClick={() => setOpen(false)}
+            >
+              <SidebarProfileIcon size={18} />
+              <span>{sidebarProfileItem.label}</span>
+            </NavLink>
+          </div>
+        ) : null}
 
         <div className="admin-box">
           <div>

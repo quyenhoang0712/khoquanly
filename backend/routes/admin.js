@@ -95,6 +95,85 @@ const shiftsFromOption = (shiftOption) => {
   return [];
 };
 
+const defaultShiftTasks = {
+  sale: {
+    morning: { title: "Lau nhà", description: "Việc mặc định cho nhân viên sale ca 1." },
+    afternoon: { title: "Lau kệ", description: "Việc mặc định cho nhân viên sale ca 2." },
+  },
+  warehouse: {
+    morning: { title: "Gói đơn", description: "Việc mặc định cho nhân viên kho ca 1." },
+    afternoon: { title: "Dọn dẹp", description: "Việc mặc định cho nhân viên kho ca 2." },
+  },
+};
+
+const removeUserFromTask = async (task, userId) => {
+  task.assignedTo = task.assignedTo.filter((item) => String(item) !== String(userId));
+  task.statusByUser = task.statusByUser.filter((item) => String(item.user) !== String(userId));
+
+  if (task.assignedTo.length === 0) {
+    await task.deleteOne();
+    return;
+  }
+
+  await task.save();
+};
+
+const removeDefaultShiftTasksForUserDate = async ({ userId, date, shifts }) => {
+  const filters = { source: "default-shift", date, assignedTo: userId };
+  if (shifts?.length) filters.shift = { $in: shifts };
+  const tasks = await DailyTask.find(filters);
+  await Promise.all(tasks.map((task) => removeUserFromTask(task, userId)));
+};
+
+const ensureDefaultShiftTask = async ({ user, date, shift, adminId }) => {
+  const position = user.position === "sale" ? "sale" : "warehouse";
+  const defaultTask = defaultShiftTasks[position]?.[shift];
+  if (!defaultTask) return null;
+
+  const task = await DailyTask.findOne({
+    date,
+    source: "default-shift",
+    position,
+    shift,
+    title: defaultTask.title,
+  });
+
+  if (!task) {
+    return DailyTask.create({
+      ...defaultTask,
+      date,
+      source: "default-shift",
+      position,
+      shift,
+      assignedTo: [user._id],
+      statusByUser: [{ user: user._id, status: "not-started" }],
+      createdBy: adminId,
+    });
+  }
+
+  if (!task.assignedTo.some((item) => String(item) === String(user._id))) {
+    task.assignedTo.push(user._id);
+  }
+  if (!task.statusByUser.some((item) => String(item.user) === String(user._id))) {
+    task.statusByUser.push({ user: user._id, status: "not-started" });
+  }
+
+  await task.save();
+  return task;
+};
+
+const ensureDefaultShiftTasks = async ({ user, shifts, date, adminId }) => {
+  for (const shift of shifts) {
+    await ensureDefaultShiftTask({ user, date, shift, adminId });
+  }
+};
+
+const ensureDefaultShiftTasksByDate = async ({ user, shifts, adminId }) => {
+  for (const item of shifts) {
+    await ensureDefaultShiftTask({ user, date: item.date, shift: item.shift, adminId });
+  }
+};
+
 const schedulePositions = ["warehouse", "sale"];
 const scheduleShifts = ["morning", "afternoon"];
 const autoScheduleCapacity = {
@@ -260,6 +339,7 @@ const saveEmployeeDaySchedule = async ({ userId, date, shiftOption, status, admi
   }
 
   const shifts = shiftsFromOption(shiftOption);
+  await removeDefaultShiftTasksForUserDate({ userId, date });
   await WorkSchedule.deleteMany({ user: userId, date });
 
   if (shiftOption === "off") return [];
@@ -278,6 +358,7 @@ const saveEmployeeDaySchedule = async ({ userId, date, shiftOption, status, admi
       approvedBy: adminId,
     }))
   );
+  if (status !== "leave") await ensureDefaultShiftTasks({ user: employee, shifts, date, adminId });
 
   return WorkSchedule.find({ user: userId, date }).populate(populateUser).sort({ shift: 1 });
 };
@@ -397,19 +478,23 @@ router.post("/users", async (req, res, next) => {
       ? await User.findByIdAndUpdate(existed._id, userPayload, { new: true, runValidators: true })
       : await User.create(userPayload);
 
-    console.log(`Employee login email queued for ${email} from ${process.env.SMTP_USER || "unconfigured SMTP_USER"}`);
-    sendEmployeeWelcomeEmail({ to: email, name, password })
-      .then((result) => {
-        if (result.sent) console.log(`Employee login email sent to ${email}`);
-        else console.warn(`Employee login email skipped for ${email}: ${result.reason || "Unknown reason"}`);
-      })
-      .catch((error) => {
-        console.warn(`Employee login email failed for ${email}: ${describeError(error)}`);
-      });
+    let emailDelivery;
+    try {
+      console.log(`Employee login email sending to ${email} from ${process.env.SMTP_USER || "unconfigured SMTP_USER"}`);
+      emailDelivery = await sendEmployeeWelcomeEmail({ to: email, name, password });
+      if (emailDelivery.sent) {
+        console.log(`Employee login email sent to ${email}`);
+      } else {
+        console.warn(`Employee login email skipped for ${email}: ${emailDelivery.reason || "Unknown reason"}`);
+      }
+    } catch (error) {
+      emailDelivery = { sent: false, skipped: false, reason: describeError(error) };
+      console.warn(`Employee login email failed for ${email}: ${emailDelivery.reason}`);
+    }
 
     const created = user.toObject();
     delete created.password;
-    res.status(201).json({ ...created, emailDelivery: { queued: true } });
+    res.status(201).json({ ...created, emailDelivery });
   } catch (error) {
     next(error);
   }
@@ -721,6 +806,7 @@ router.put("/schedules/:date/:userId", async (req, res, next) => {
 
 router.delete("/schedules/:date/:userId", async (req, res, next) => {
   try {
+    await removeDefaultShiftTasksForUserDate({ userId: req.params.userId, date: req.params.date });
     const result = await WorkSchedule.deleteMany({ user: req.params.userId, date: req.params.date });
     res.json({ deletedCount: result.deletedCount });
   } catch (error) {
@@ -767,6 +853,14 @@ router.post("/schedule-requests/auto-schedule", async (req, res, next) => {
           )
         )
       );
+      for (const item of plan.assignments) {
+        await ensureDefaultShiftTask({
+          user: item.user,
+          date: item.date,
+          shift: item.shift,
+          adminId: req.user.id,
+        });
+      }
 
       await Promise.all(
         plan.requestSummaries.map((item) =>
@@ -793,6 +887,8 @@ router.put("/schedule-requests/:id/approve", async (req, res, next) => {
   try {
     const request = await WeeklyScheduleRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ message: "Schedule request not found" });
+    const employee = await User.findOne({ _id: request.user, role: "user", active: true });
+    if (!employee) return res.status(404).json({ message: "Không tìm thấy nhân viên" });
 
     request.status = "approved";
     request.adminNote = req.body.adminNote || "";
@@ -816,6 +912,7 @@ router.put("/schedule-requests/:id/approve", async (req, res, next) => {
         )
       )
     );
+    await ensureDefaultShiftTasksByDate({ user: employee, shifts: request.shifts, adminId: req.user.id });
 
     res.json(await request.populate(populateUser));
   } catch (error) {

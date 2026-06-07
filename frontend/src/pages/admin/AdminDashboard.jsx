@@ -1,5 +1,5 @@
 import { AlertCircle, CalendarCheck, CheckCircle2, ClipboardList, Clock3, FileText, LogOut, Store, Users, Warehouse } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api";
 import { Alert } from "../../components/DataState";
@@ -26,6 +26,7 @@ export default function AdminDashboard() {
   const rangeLabel = data?.range?.start === data?.range?.end
     ? formatDate(data?.range?.start)
     : `${formatDate(data?.range?.start)} - ${formatDate(data?.range?.end)}`;
+  const chartGroups = useMemo(() => buildDashboardCharts(data), [data]);
 
   return (
     <section className="page">
@@ -65,6 +66,8 @@ export default function AdminDashboard() {
       </div>
 
       <AdminActionItems data={data} mode={mode} />
+
+      <DashboardCharts groups={chartGroups} />
 
       <div className="task-board-grid dashboard-report-grid">
         <PositionReportCard
@@ -129,6 +132,129 @@ export default function AdminDashboard() {
       </div>
 
     </section>
+  );
+}
+
+const chartColors = ["#2f6df6", "#0ea47a", "#7c3aed", "#d17a00", "#e11d48"];
+
+function buildDashboardCharts(data) {
+  const warehouse = data?.positionSummary?.warehouse || {};
+  const sale = data?.positionSummary?.sale || {};
+  const employeeRows = data?.employeeRows || [];
+  const scheduledDays = employeeRows.reduce((sum, item) => sum + Number(item.scheduledDays || 0), 0);
+  const checkoutDays = employeeRows.reduce((sum, item) => sum + Number(item.checkoutDays || 0), 0);
+  const missingCheckoutDays = Math.max(scheduledDays - checkoutDays, 0);
+  const completedTasks = Number(warehouse.completedTasks || 0) + Number(sale.completedTasks || 0);
+  const inProgressTasks = Number(warehouse.inProgressTasks || 0) + Number(sale.inProgressTasks || 0);
+  const notStartedTasks = Number(warehouse.notStartedTasks || 0) + Number(sale.notStartedTasks || 0);
+  const pendingSchedules = Number(data?.actionItems?.pendingSchedules || 0);
+  const pendingOvertime = Number(data?.actionItems?.pendingOvertime || 0);
+  const missingCheckouts = Number(data?.actionItems?.missingCheckouts?.length || 0);
+  const unfinishedTasks = Number(data?.actionItems?.unfinishedTasks?.length || 0);
+
+  return [
+    {
+      title: "Cơ cấu nhân sự",
+      subtitle: "Kho / Sale",
+      totalLabel: `${formatNumber(data?.employees || 0)} người`,
+      segments: [
+        { label: "Kho", value: Number(warehouse.employees || 0), color: chartColors[1] },
+        { label: "Sale", value: Number(sale.employees || 0), color: chartColors[2] },
+      ],
+    },
+    {
+      title: "Tỷ lệ checkout",
+      subtitle: "Theo ngày có lịch",
+      totalLabel: `${formatNumber(checkoutDays)}/${formatNumber(scheduledDays)} ngày`,
+      segments: [
+        { label: "Đã checkout", value: checkoutDays, color: chartColors[1] },
+        { label: "Thiếu", value: missingCheckoutDays, color: chartColors[4] },
+      ],
+    },
+    {
+      title: "Tiến độ task",
+      subtitle: "Trạng thái công việc",
+      totalLabel: `${formatNumber(completedTasks + inProgressTasks + notStartedTasks)} task`,
+      segments: [
+        { label: "Xong", value: completedTasks, color: chartColors[1] },
+        { label: "Đang làm", value: inProgressTasks, color: chartColors[0] },
+        { label: "Chưa làm", value: notStartedTasks, color: chartColors[3] },
+      ],
+    },
+    {
+      title: "Việc tồn đọng",
+      subtitle: "Cần admin xử lý",
+      totalLabel: `${formatNumber(pendingSchedules + pendingOvertime + missingCheckouts + unfinishedTasks)} mục`,
+      segments: [
+        { label: "Lịch", value: pendingSchedules, color: chartColors[3] },
+        { label: "Tăng ca", value: pendingOvertime, color: chartColors[2] },
+        { label: "Checkout", value: missingCheckouts, color: chartColors[0] },
+        { label: "Task", value: unfinishedTasks, color: chartColors[1] },
+      ],
+    },
+  ];
+}
+
+function DashboardCharts({ groups }) {
+  return (
+    <section className="dashboard-chart-grid">
+      {groups.map((group) => (
+        <article className="dashboard-chart-card" key={group.title}>
+          <div className="dashboard-chart-copy">
+            <span>{group.subtitle}</span>
+            <strong>{group.title}</strong>
+          </div>
+          <DonutChart segments={group.segments} label={group.totalLabel} />
+          <div className="dashboard-chart-legend">
+            {group.segments.map((segment) => (
+              <div key={segment.label}>
+                <i style={{ background: segment.color }} />
+                <span>{segment.label}</span>
+                <strong>{formatNumber(segment.value || 0)}</strong>
+              </div>
+            ))}
+          </div>
+        </article>
+      ))}
+    </section>
+  );
+}
+
+function DonutChart({ segments, label }) {
+  const total = segments.reduce((sum, segment) => sum + Number(segment.value || 0), 0);
+  const radius = 43;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+
+  return (
+    <div className="donut-chart" aria-label={label}>
+      <svg viewBox="0 0 120 120" role="img">
+        <circle className="donut-chart-track" cx="60" cy="60" r={radius} />
+        {total > 0 &&
+          segments.map((segment) => {
+            const value = Number(segment.value || 0);
+            const dash = (value / total) * circumference;
+            const circle = (
+              <circle
+                className="donut-chart-segment"
+                cx="60"
+                cy="60"
+                r={radius}
+                stroke={segment.color}
+                strokeDasharray={`${dash} ${circumference - dash}`}
+                strokeDashoffset={-offset}
+                key={segment.label}
+              />
+            );
+            offset += dash;
+            return circle;
+          })}
+      </svg>
+      <div>
+        <strong>{total > 0 ? Math.round((Number(segments[0]?.value || 0) / total) * 100) : 0}%</strong>
+        <span>{label}</span>
+      </div>
+    </div>
   );
 }
 

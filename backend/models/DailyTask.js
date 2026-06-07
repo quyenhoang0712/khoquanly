@@ -5,6 +5,9 @@ const dailyTaskSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true },
     description: { type: String, default: "" },
     date: { type: String, required: true },
+    source: { type: String, enum: ["manual", "default-shift"], default: "manual" },
+    position: { type: String, enum: ["warehouse", "sale", ""], default: "" },
+    shift: { type: String, enum: ["morning", "afternoon", ""], default: "" },
     assignedTo: [{ type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }],
     statusByUser: [
       {

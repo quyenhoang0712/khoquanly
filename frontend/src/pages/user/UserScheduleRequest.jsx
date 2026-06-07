@@ -170,7 +170,7 @@ export default function UserScheduleRequest() {
       <div className="panel form-panel">
         <form className="product-form" onSubmit={submit}>
           {currentRequest?.status === "approved" && (
-            <div className="alert warning">Lịch này đã được duyệt. Tạm thời vẫn cho sửa để test, gửi lại sẽ chuyển về chờ duyệt.</div>
+            <div className="alert warning">Lịch này đã được duyệt. Tạm thời vẫn cho sửa, gửi lại sẽ chuyển về chờ duyệt.</div>
           )}
 
           <div className="week-summary">
