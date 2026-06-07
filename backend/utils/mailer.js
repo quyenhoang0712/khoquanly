@@ -69,6 +69,13 @@ const escapeHtml = (value) =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 
+const formatSender = () => {
+  const from = String(process.env.MAIL_FROM || process.env.SMTP_USER || "").trim();
+  const name = String(process.env.MAIL_FROM_NAME || "138Knitwear").trim();
+  if (!from || from.includes("<")) return from;
+  return name ? `${name} <${from}>` : from;
+};
+
 const withTimeout = (promise, timeoutMs) =>
   Promise.race([
     promise,
@@ -118,7 +125,7 @@ const sendEmployeeWelcomeEmail = async ({ to, name, password }) => {
   }
 
   const appUrl = process.env.CLIENT_URL || "http://localhost:5173";
-  const from = process.env.MAIL_FROM || process.env.SMTP_USER;
+  const from = formatSender();
   const subject = "Thông tin tài khoản nhân viên";
   const safeName = escapeHtml(name);
   const safeTo = escapeHtml(to);
